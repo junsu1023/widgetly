@@ -12,5 +12,6 @@ import SwiftUI
 struct DdayWidgetExtensionBundle: WidgetBundle {
     var body: some Widget {
         DdayWidgetExtension()
+        ConnectionWidget()
     }
 }

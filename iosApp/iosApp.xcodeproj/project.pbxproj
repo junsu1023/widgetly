@@ -60,6 +60,19 @@
 			);
 			target = 84C19F563073444700B9B960 /* DdayWidgetExtensionExtension */;
 		};
+		AD2B71EAA87F4B94B64FA106 /* Exceptions for "DdayWidgetExtension" folder in "DdayWidgetExtensionTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AppIntent.swift,
+				Assets.xcassets,
+				ConnectionWidget.swift,
+				ConnectionWidgetConfigurationIntent.swift,
+				DdayWidgetExtension.swift,
+				DdayWidgetExtensionBundle.swift,
+				Info.plist,
+			);
+			target = 84C19F75307345EF00B9B960 /* DdayWidgetExtensionTests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -67,6 +80,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				84C19F703073444800B9B960 /* Exceptions for "DdayWidgetExtension" folder in "DdayWidgetExtensionExtension" target */,
+				AD2B71EAA87F4B94B64FA106 /* Exceptions for "DdayWidgetExtension" folder in "DdayWidgetExtensionTests" target */,
 			);
 			path = DdayWidgetExtension;
 			sourceTree = "<group>";
@@ -215,6 +229,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				84C19F5D3073444700B9B960 /* DdayWidgetExtension */,
 				84C19F77307345EF00B9B960 /* DdayWidgetExtensionTests */,
 			);
 			name = DdayWidgetExtensionTests;
