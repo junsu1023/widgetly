@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.example.widgetly.dday.DdayListScreen
+import com.example.widgetly.connection.PairingViewModel
 import com.example.widgetly.dday.DdayViewModel
 
 class MainActivity : ComponentActivity() {
@@ -16,12 +16,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val viewModel: DdayViewModel = viewModel(
+            val ddayViewModel: DdayViewModel = viewModel(
                 factory = viewModelFactory {
                     initializer { DdayViewModel(WidgetlyApplication.ddayRepository) }
                 },
             )
-            DdayListScreen(viewModel)
+            val pairingViewModel: PairingViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer { PairingViewModel(WidgetlyApplication.widgetlyFunctions) }
+                },
+            )
+            AppRoot(ddayViewModel, pairingViewModel)
         }
     }
 }

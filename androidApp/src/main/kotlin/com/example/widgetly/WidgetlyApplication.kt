@@ -6,6 +6,7 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import com.example.widgetly.auth.ensureSignedIn
 import com.example.widgetly.connection.FirebaseWidgetlyFunctions
+import com.example.widgetly.connection.WidgetlyFunctions
 import com.example.widgetly.dday.AndroidDdayStorage
 import com.example.widgetly.dday.DdayRepository
 import com.example.widgetly.push.syncFcmToken
@@ -34,6 +35,10 @@ class WidgetlyApplication : Application() {
         }
     }
 
+    private val functions: FirebaseWidgetlyFunctions by lazy {
+        FirebaseWidgetlyFunctions(Firebase.functions(Firebase.app))
+    }
+
     private val applicationScope = CoroutineScope(Dispatchers.Default)
 
     override fun onCreate() {
@@ -52,7 +57,6 @@ class WidgetlyApplication : Application() {
      */
     private fun bootstrapFirebase() {
         val auth = Firebase.auth(Firebase.app)
-        val functions = FirebaseWidgetlyFunctions(Firebase.functions(Firebase.app))
         applicationScope.launch {
             ensureSignedIn(auth)
             FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
@@ -64,5 +68,6 @@ class WidgetlyApplication : Application() {
     companion object {
         private lateinit var instance: WidgetlyApplication
         val ddayRepository: DdayRepository get() = instance.repository
+        val widgetlyFunctions: WidgetlyFunctions get() = instance.functions
     }
 }
