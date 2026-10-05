@@ -47,3 +47,12 @@ class SendSignalAction : ActionCallback {
 
 - Android: Glance 액션 콜백이 WorkManager에 올바르게 enqueue하는지 instrumented test로 확인
 - iOS: NSE의 App Group 쓰기 로직은 XCTest로, 위젯까지의 실제 반영은 실기기 수동 검증(자동화 어려움)
+
+## 추후 보완할 점
+
+개인 디데이 위젯(Plan 1) 구현 중 발견한, 지금 당장은 아니지만 나중에 손봐야 할 것들.
+
+- **Glance 세션 재사용 패턴을 커플·친구 공유 위젯(Plan 4)에도 반드시 그대로 적용할 것.** `GlanceAppWidget.provideGlance()`는 위젯 세션당 한 번만 호출되고, `update()`/`updateAll()`은 기존 세션을 재사용하며 `provideContent{}`의 컴포저블만 재구성한다. `provideGlance()` 안에서 상태를 한 번만 읽어 컴포저블 람다에 캡처하면 이후 어떤 갱신도 반영되지 않는다(2026-10-05에 개인 위젯에서 실제로 겪은 버그, `docs/cross-platform-verification.md` #2/#5 참고). 공유 위젯도 같은 `GlanceAppWidget` 기반이므로 상태는 `currentState()`로 컴포저블 내부에서 반응형으로 읽고, "선택된 대상은 그대로인데 내용만 바뀐" 경우를 위해 refresh-token 패턴(또는 동급 장치)을 처음부터 넣어야 한다.
+- **위젯 디자인이 아직 placeholder 수준.** 흰 배경 박스 + 검은 Bold 텍스트뿐 — 테마 시스템(Plan 2) 적용 시 같이 다듬어야 한다.
+- **2×1 외의 리사이즈 상태는 실기기 미검증.** `resizeMode="horizontal|vertical"`을 허용해뒀지만, 사용자가 위젯을 확대/축소했을 때 레이아웃이 실제로 어떻게 보이는지는 아직 확인 안 함.
+- iOS 쪽 동일 버그 클래스(세션/타임라인 재사용으로 인한 미반영) 확인 필요 — `docs/cross-platform-verification.md`에서 추적 중.
