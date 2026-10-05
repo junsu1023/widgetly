@@ -29,14 +29,18 @@ class DdayGlanceWidget : GlanceAppWidget() {
         }
 
         provideContent {
-            DdayWidgetContent(entry)
+            DdayWidgetContent(entryId = entryId, entry = entry)
         }
     }
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun DdayWidgetContent(entry: DdayEntry?) {
+private fun DdayWidgetContent(entryId: String?, entry: DdayEntry?) {
+    if (entryId == null) {
+        Text("설정 필요")
+        return
+    }
     if (entry == null) {
         Text("삭제됨")
         return

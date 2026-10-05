@@ -40,4 +40,28 @@ class DdayRepositoryTest {
         repo.delete(sampleEntry.id)
         assertEquals(emptyList(), repo.list())
     }
+
+    @Test
+    fun `upsert notifies the onChanged callback`() = runTest {
+        var notifiedCount = 0
+        val repo = DdayRepository(FakeDdayStorage()) { notifiedCount++ }
+        repo.upsert(sampleEntry)
+        assertEquals(1, notifiedCount)
+    }
+
+    @Test
+    fun `delete notifies the onChanged callback`() = runTest {
+        var notifiedCount = 0
+        val repo = DdayRepository(FakeDdayStorage(listOf(sampleEntry))) { notifiedCount++ }
+        repo.delete(sampleEntry.id)
+        assertEquals(1, notifiedCount)
+    }
+
+    @Test
+    fun `a rejected upsert does not notify onChanged`() = runTest {
+        var notifiedCount = 0
+        val repo = DdayRepository(FakeDdayStorage()) { notifiedCount++ }
+        runCatching { repo.upsert(sampleEntry.copy(title = "   ")) }
+        assertEquals(0, notifiedCount)
+    }
 }

@@ -1,5 +1,7 @@
 package com.example.widgetly.dday
 
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -24,5 +26,25 @@ class AndroidDdayStorageTest {
         val storage = AndroidDdayStorage(context)
         storage.writeAll(listOf(sampleEntry))
         assertEquals(listOf(sampleEntry), storage.readAll())
+    }
+
+    @Test
+    fun `readAll tolerates an unknown field added by a future version`() = runTest {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        context.ddayDataStore.edit { prefs ->
+            prefs[ENTRIES_KEY] = """[{"id":"sample-1","title":"sample","targetDate":"2026-12-25","countMode":"START_AT_ZERO","repeat":"NONE","futureField":"ignored"}]"""
+        }
+        val storage = AndroidDdayStorage(context)
+        assertEquals(listOf(sampleEntry), storage.readAll())
+    }
+
+    @Test
+    fun `readAll returns an empty list instead of throwing on corrupted data`() = runTest {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        context.ddayDataStore.edit { prefs ->
+            prefs[ENTRIES_KEY] = "not valid json"
+        }
+        val storage = AndroidDdayStorage(context)
+        assertEquals(emptyList(), storage.readAll())
     }
 }

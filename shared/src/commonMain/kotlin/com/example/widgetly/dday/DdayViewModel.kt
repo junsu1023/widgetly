@@ -18,7 +18,7 @@ class DdayViewModel(private val repository: DdayRepository) : ViewModel() {
 
     fun upsert(entry: DdayEntry) {
         viewModelScope.launch {
-            repository.upsert(entry)
+            runCatching { repository.upsert(entry) }
             _entries.value = repository.list()
         }
     }

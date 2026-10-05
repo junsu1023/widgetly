@@ -44,4 +44,11 @@ class DdayViewModelTest {
         viewModel.upsert(sampleEntry)
         assertEquals(listOf(sampleEntry), viewModel.entries.value)
     }
+
+    @Test
+    fun `a rejected upsert does not crash the viewModelScope`() = runTest {
+        val viewModel = DdayViewModel(DdayRepository(FakeDdayStorage()))
+        viewModel.upsert(sampleEntry.copy(title = "   "))
+        assertEquals(emptyList(), viewModel.entries.value)
+    }
 }

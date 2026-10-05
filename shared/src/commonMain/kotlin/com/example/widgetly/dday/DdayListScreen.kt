@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,11 +30,18 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
+@Suppress("DEPRECATION")
 @Composable
 fun DdayListScreen(viewModel: DdayViewModel) {
     val entries by viewModel.entries.collectAsState()
-    var newTitle by remember { mutableStateOf("") }
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+
+    var newTitle by remember { mutableStateOf("") }
+    var newYear by remember { mutableStateOf(today.year.toString()) }
+    var newMonth by remember { mutableStateOf(today.monthNumber.toString()) }
+    var newDay by remember { mutableStateOf(today.dayOfMonth.toString()) }
+    var countStartAtOne by remember { mutableStateOf(false) }
+    var repeatYearly by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.refresh()
@@ -45,19 +53,48 @@ fun DdayListScreen(viewModel: DdayViewModel) {
                 OutlinedTextField(
                     value = newTitle,
                     onValueChange = { newTitle = it },
+                    label = { Text("제목") },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                OutlinedTextField(
+                    value = newYear,
+                    onValueChange = { newYear = it },
+                    label = { Text("년") },
+                )
+                OutlinedTextField(
+                    value = newMonth,
+                    onValueChange = { newMonth = it },
+                    label = { Text("월") },
+                )
+                OutlinedTextField(
+                    value = newDay,
+                    onValueChange = { newDay = it },
+                    label = { Text("일") },
+                )
+            }
+            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                Text("기준일을 1일로 세기")
+                Switch(checked = countStartAtOne, onCheckedChange = { countStartAtOne = it })
+            }
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Text("매년 반복")
+                Switch(checked = repeatYearly, onCheckedChange = { repeatYearly = it })
+            }
+            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 Button(onClick = {
-                    if (newTitle.isNotBlank()) {
-                        viewModel.upsert(
-                            DdayEntry(
-                                id = Random.nextLong().toString(),
-                                title = newTitle,
-                                targetDate = today,
-                            ),
-                        )
+                    val entry = buildDdayEntry(
+                        id = Random.nextLong().toString(),
+                        title = newTitle,
+                        year = newYear.toIntOrNull(),
+                        month = newMonth.toIntOrNull(),
+                        day = newDay.toIntOrNull(),
+                        countStartAtOne = countStartAtOne,
+                        repeatYearly = repeatYearly,
+                    )
+                    if (entry != null) {
+                        viewModel.upsert(entry)
                         newTitle = ""
                     }
                 }) {

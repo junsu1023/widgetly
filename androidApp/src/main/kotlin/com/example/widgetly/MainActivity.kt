@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.widgetly.dday.DdayListScreen
 import com.example.widgetly.dday.DdayViewModel
 
@@ -13,7 +16,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            DdayListScreen(DdayViewModel(WidgetlyApplication.ddayRepository))
+            val viewModel: DdayViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer { DdayViewModel(WidgetlyApplication.ddayRepository) }
+                },
+            )
+            DdayListScreen(viewModel)
         }
     }
 }

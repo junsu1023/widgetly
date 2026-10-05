@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.ui)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.androidx.lifecycle.viewmodelCompose)
 
     implementation(libs.androidx.glance.appwidget)
 

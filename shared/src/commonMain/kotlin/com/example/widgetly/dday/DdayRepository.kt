@@ -1,6 +1,9 @@
 package com.example.widgetly.dday
 
-class DdayRepository(private val storage: DdayStorage) {
+class DdayRepository(
+    private val storage: DdayStorage,
+    private val onChanged: suspend () -> Unit = {},
+) {
     suspend fun list(): List<DdayEntry> = storage.readAll()
 
     suspend fun upsert(entry: DdayEntry) {
@@ -8,10 +11,12 @@ class DdayRepository(private val storage: DdayStorage) {
         val current = storage.readAll()
         val replaced = current.filterNot { it.id == entry.id } + entry
         storage.writeAll(replaced)
+        onChanged()
     }
 
     suspend fun delete(id: String) {
         val current = storage.readAll()
         storage.writeAll(current.filterNot { it.id == id })
+        onChanged()
     }
 }
