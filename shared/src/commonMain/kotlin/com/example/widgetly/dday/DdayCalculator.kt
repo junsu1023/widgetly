@@ -8,7 +8,10 @@ data class DdayResult(val label: String, val calendarDiffDays: Int)
 
 fun calculateDday(entry: DdayEntry, today: LocalDate): DdayResult {
     val effectiveTarget = effectiveTargetDate(entry, today)
-    val calendarDiffDays = today.until(effectiveTarget, DateTimeUnit.DAY)
+    // until(..., DateTimeUnit.DAY) returns Int on the JVM target but Long on Native;
+    // .toInt() normalizes both (redundant-but-harmless on JVM).
+    @Suppress("REDUNDANT_CALL_OF_CONVERSION_METHOD")
+    val calendarDiffDays = today.until(effectiveTarget, DateTimeUnit.DAY).toInt()
 
     val oneIfStartAtOne = if (entry.countMode == CountMode.START_AT_ONE) 1 else 0
     val label = when {
@@ -31,11 +34,13 @@ private fun effectiveTargetDate(entry: DdayEntry, today: LocalDate): LocalDate {
 }
 
 private fun occurrenceInYear(targetDate: LocalDate, year: Int): LocalDate {
+    @Suppress("DEPRECATION")
     val day = if (targetDate.monthNumber == 2 && targetDate.dayOfMonth == 29 && !isLeapYear(year)) {
         28
     } else {
         targetDate.dayOfMonth
     }
+    @Suppress("DEPRECATION")
     return LocalDate(year, targetDate.monthNumber, day)
 }
 
