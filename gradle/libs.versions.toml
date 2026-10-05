@@ -12,6 +12,7 @@ androidx-glance = "1.1.1"
 androidx-lifecycle = "2.11.0"
 androidx-testExt = "1.3.0"
 composeMultiplatform = "1.12.1"
+firebase-kotlin-sdk = "2.7.0"
 junit = "4.13.2"
 kotlin = "2.4.20"
 kotlinx-coroutines = "1.9.0"
@@ -42,6 +43,9 @@ compose-components-resources = { module = "org.jetbrains.compose.components:comp
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebase-kotlin-sdk" }
+firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebase-kotlin-sdk" }
+firebase-functions = { module = "dev.gitlive:firebase-functions", version.ref = "firebase-kotlin-sdk" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 

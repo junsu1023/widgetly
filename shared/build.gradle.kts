@@ -25,7 +25,9 @@ kotlin {
        minSdk = libs.versions.android.minSdk.get().toInt()
     
        compilerOptions {
-           jvmTarget = JvmTarget.JVM_11
+           // JVM_17: dev.gitlive Firebase artifacts ship inline functions compiled
+           // with JVM target 17; JVM_11 fails with INLINE_FROM_HIGHER_PLATFORM.
+           jvmTarget = JvmTarget.JVM_17
        }
        androidResources {
            enable = true
@@ -57,6 +59,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.firebase.auth)
+            implementation(libs.firebase.firestore)
+            implementation(libs.firebase.functions)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
