@@ -218,6 +218,11 @@ struct ConnectionWidgetProvider: AppIntentTimelineProvider {
                 pushArrivedSinceLastFetch: loadPushArrivedFlag(connectionId: connectionId)
             )
             if shouldFetch {
+                // TODO: once fetchConnectionSnapshotFromServer does a real
+                // fetch, a non-nil result here must be persisted (e.g. via
+                // the same App Group write loadLocalConnectionSnapshot
+                // reads) — otherwise a successful fetch still wouldn't
+                // change what the widget renders.
                 _ = await fetchConnectionSnapshotFromServer(connectionId: connectionId)
                 markFetched(connectionId: connectionId, at: now)
             }
