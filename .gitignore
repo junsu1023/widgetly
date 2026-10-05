@@ -19,3 +19,11 @@ captures
 node_modules/
 .worktrees/
 .superpowers/
+
+# Firebase emulator artifacts
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+pubsub-debug.log
