@@ -9,5 +9,6 @@ export const db = getFirestore(app, "widgetly");
 
 // Task 2-5 register their callable functions here, one export line each, e.g.:
 export { registerFcmToken } from "./registerFcmToken";
-// export { createPairingCode, redeemPairingCode } from "./pairing";
+export { createPairingCode } from "./createPairingCode";
+export { redeemPairingCode } from "./redeemPairingCode";
 // export { sendSignal } from "./signal";
