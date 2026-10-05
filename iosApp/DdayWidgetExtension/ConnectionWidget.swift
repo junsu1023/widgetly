@@ -6,23 +6,87 @@
 import WidgetKit
 import SwiftUI
 import AppIntents
-import Shared
 
 private let appGroupSuiteName = "group.com.example.widgetly"
 private let rateLimitedAtKeyPrefix = "connection_rate_limited_at_"
 private let sendFailedAtKeyPrefix = "connection_send_failed_at_"
 private let authTokenKey = "firebase_id_token"
 private let rateLimitWindowSeconds: TimeInterval = 5
+private let connectionSnapshotKeyPrefix = "connection_snapshot_"
+private let lastFetchedAtKeyPrefix = "connection_last_fetched_at_"
+private let pushArrivedKeyPrefix = "connection_push_arrived_"
 
-// ponytail: there is no local connection snapshot storage yet. Writing one
-// into the App Group is a later task's job (the Notification Service
-// Extension path described in docs/widget-development.md's "iOS 17~25" push
-// handling) — this task only owns rendering + sending, not that plumbing.
-// Until a snapshot writer exists, this always returns nil, which correctly
-// renders as "연결 끊김" (the same honest state as a connection that's
-// genuinely gone — not a lie about real-time-ness). Replace with a real App
-// Group read (suiteName above) once the writer lands.
-private func loadLocalConnectionSnapshot(connectionId: String) -> Connection? {
+/// What this task can actually know about a connection, from either a push
+/// payload (functions/src/lib/push.ts's `data`: `connectionId`/`presetType`/
+/// `senderUid` for a signal, or just `connectionId` for a pairing success) or
+/// a future fallback server fetch — just enough to render the two things
+/// ConnectionWidgetEntryView draws (streak, active/disconnected).
+///
+/// Deliberately NOT Shared's `Connection` type (Task 1), even though this
+/// task's brief lists that as a consumed interface: `Connection` also
+/// requires `memberUids`/`type`/`anniversaryDate`/`lastSignalByUid`, none of
+/// which the push payload carries and none of which any fetch path built so
+/// far can supply either (see `fetchConnectionSnapshotFromServer` below) —
+/// and the view never reads them. Fabricating those fields to satisfy the
+/// type would be less honest than a smaller type that only claims to know
+/// what's actually knowable. Documented here per task-6-brief's explicit
+/// "use your judgment, document the chosen shape" instruction. This also
+/// lets this file drop its `import Shared` entirely.
+struct ConnectionSnapshot: Codable {
+    var status: String
+    var streak: Int
+}
+
+/// Keyed per connectionId, same convention as the rate-limited/send-failed
+/// flags below. Written by this extension's own fallback-fetch seam and by
+/// SignalNotificationService/NotificationService.swift (a separate Xcode
+/// target/module once a human creates it — see that file's matching
+/// `ConnectionSnapshot` struct, kept duplicated rather than shared because
+/// there's no framework boundary between the two extensions to share it
+/// through).
+private func loadLocalConnectionSnapshot(connectionId: String) -> ConnectionSnapshot? {
+    guard let defaults = UserDefaults(suiteName: appGroupSuiteName),
+          let json = defaults.string(forKey: connectionSnapshotKeyPrefix + connectionId),
+          let data = json.data(using: .utf8) else {
+        return nil
+    }
+    return try? JSONDecoder().decode(ConnectionSnapshot.self, from: data)
+}
+
+private func loadLastFetchedAt(connectionId: String) -> Date? {
+    guard let defaults = UserDefaults(suiteName: appGroupSuiteName) else { return nil }
+    let value = defaults.double(forKey: lastFetchedAtKeyPrefix + connectionId)
+    return value > 0 ? Date(timeIntervalSince1970: value) : nil
+}
+
+private func loadPushArrivedFlag(connectionId: String) -> Bool {
+    UserDefaults(suiteName: appGroupSuiteName)?.bool(forKey: pushArrivedKeyPrefix + connectionId) ?? false
+}
+
+/// Called whenever a fallback fetch attempt HAPPENS (per the brief: "폴백
+/// 조회가 일어나면 lastFetchedAt을 갱신하고 pushArrivedSinceLastFetch를
+/// 리셋한다") — on attempt, not only on confirmed success. The brief's policy
+/// doesn't distinguish attempted-but-failed from succeeded; adding that
+/// distinction (e.g. backing off retries only on real network failure) is a
+/// real feature, not a few lines, and not built here.
+private func markFetched(connectionId: String, at date: Date) {
+    guard let defaults = UserDefaults(suiteName: appGroupSuiteName) else { return }
+    defaults.set(date.timeIntervalSince1970, forKey: lastFetchedAtKeyPrefix + connectionId)
+    defaults.set(false, forKey: pushArrivedKeyPrefix + connectionId)
+}
+
+// ponytail: no real network/Firestore client here. A genuine fetch needs
+// either (a) Firebase bootstrapped inside this extension — its own Xcode/
+// plist manual step, same class of work as this plan's Task 2's pending SPM
+// step — or (b) a new read-oriented Cloud Function callable over plain
+// HTTPS, the same way SendSignalHttpClient calls sendSignal. Neither exists
+// today and both are out of this task's scope (brief lists only 3 files).
+// This seam exists so a later task only has to fill in the body; the
+// gating/bookkeeping around it — this task's actual deliverable — is fully
+// wired and correct regardless of what this returns. Ceiling: until this is
+// implemented, the "공통 폴백" fetch never actually refreshes stale data by
+// itself — only a push (via NotificationService's own merge-write) can.
+private func fetchConnectionSnapshotFromServer(connectionId: String) async -> ConnectionSnapshot? {
     nil
 }
 
@@ -127,7 +191,7 @@ struct SendSignalIntent: AppIntent {
 struct ConnectionWidgetEntry: TimelineEntry {
     let date: Date
     let connectionId: String?
-    let connection: Connection?
+    let connection: ConnectionSnapshot?
     let rateLimited: Bool
     let sendFailed: Bool
 }
@@ -144,7 +208,22 @@ struct ConnectionWidgetProvider: AppIntentTimelineProvider {
     func timeline(for configuration: ConnectionWidgetConfigurationIntent, in context: Context) async -> Timeline<ConnectionWidgetEntry> {
         // 공통 폴백(docs/widget-development.md): 푸시/NSE 경로가 실패하거나 꺼져
         // 있어도 결국 반영되도록 주기적으로 재조회. Firestore 읽기 할당량 때문에
-        // 너무 자주는 안 함 — 30분 간격.
+        // 매 갱신마다 조회하지 않고, TimelineRefreshPolicy가 "푸시 수신 직후"
+        // 또는 "마지막 조회 후 30분 경과"일 때만 조회하도록 게이팅한다.
+        if let connectionId = configuration.connectionId, !connectionId.isEmpty {
+            let now = Date()
+            let shouldFetch = TimelineRefreshPolicy().shouldFetchFromServer(
+                now: now,
+                lastFetchedAt: loadLastFetchedAt(connectionId: connectionId),
+                pushArrivedSinceLastFetch: loadPushArrivedFlag(connectionId: connectionId)
+            )
+            if shouldFetch {
+                _ = await fetchConnectionSnapshotFromServer(connectionId: connectionId)
+                markFetched(connectionId: connectionId, at: now)
+            }
+        }
+        // 위 조회 여부와 무관하게, 결국 시스템 스케줄로 다시 호출되도록 30분 뒤
+        // refresh도 계속 건다 — 다음 기회에 TimelineRefreshPolicy가 다시 판단한다.
         let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date()
         return Timeline(entries: [makeEntry(for: configuration, on: Date())], policy: .after(nextRefresh))
     }
