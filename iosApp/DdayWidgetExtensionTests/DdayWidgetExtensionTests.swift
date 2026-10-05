@@ -33,6 +33,19 @@ struct DdayWidgetExtensionTests {
         #expect(label == "D-DAY")
     }
 
+    @Test func unknownThemeIdFallsBackToTheDefaultTheme() {
+        let result = ThemeCatalog.shared.find(id: "does-not-exist")
+        #expect(result.id == ThemeCatalog.shared.DEFAULT_THEME_ID)
+    }
+
+    @Test func knownThemeIdReturnsTheMatchingThemeWithItsColors() {
+        let known = ThemeCatalog.shared.all.first { $0.id != ThemeCatalog.shared.DEFAULT_THEME_ID }!
+        let result = ThemeCatalog.shared.find(id: known.id)
+        #expect(result.id == known.id)
+        #expect(result.backgroundColorArgb == known.backgroundColorArgb)
+        #expect(result.foregroundColorArgb == known.foregroundColorArgb)
+    }
+
     @Test func dateConvertsToTheMatchingKotlinLocalDate() {
         var components = DateComponents()
         components.year = 2026

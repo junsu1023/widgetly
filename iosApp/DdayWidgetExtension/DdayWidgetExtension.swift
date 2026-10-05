@@ -18,14 +18,48 @@ private extension Date {
     }
 }
 
+struct WidgetDisplayState {
+    let label: String
+    let backgroundColorArgb: Int64
+    let foregroundColorArgb: Int64
+}
+
+func mapToWidgetState(entry: DdayEntry?, themeId: String?, today: Date) -> WidgetDisplayState {
+    let label = DdayCalculatorKt.ddayDisplayLabel(entry: entry, today: today.toKotlinLocalDate())
+    let theme = ThemeCatalog.shared.find(id: themeId ?? ThemeCatalog.shared.DEFAULT_THEME_ID)
+    return WidgetDisplayState(
+        label: label,
+        backgroundColorArgb: theme.backgroundColorArgb,
+        foregroundColorArgb: theme.foregroundColorArgb
+    )
+}
+
+extension Color {
+    init(argb: Int64) {
+        let a = Double((argb >> 24) & 0xFF) / 255.0
+        let r = Double((argb >> 16) & 0xFF) / 255.0
+        let g = Double((argb >> 8) & 0xFF) / 255.0
+        let b = Double(argb & 0xFF) / 255.0
+        self.init(.sRGB, red: r, green: g, blue: b, opacity: a)
+    }
+}
+
 struct SimpleEntry: TimelineEntry {
     let date: Date
     let label: String
+    let backgroundColorArgb: Int64
+    let foregroundColorArgb: Int64
 }
 
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), label: "D-DAY")
+        let theme = ThemeCatalog.shared.find(id: ThemeCatalog.shared.DEFAULT_THEME_ID)
+        return SimpleEntry(
+            date: Date(),
+            label: "D-DAY",
+            backgroundColorArgb: theme.backgroundColorArgb,
+            foregroundColorArgb: theme.foregroundColorArgb
+        )
     }
 
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
@@ -45,13 +79,20 @@ struct Provider: AppIntentTimelineProvider {
     }
 
     private func makeEntry(for configuration: ConfigurationAppIntent, on date: Date) async -> SimpleEntry {
-        guard let selectedId = configuration.selectedEntry?.id else {
-            return SimpleEntry(date: date, label: "설정 필요")
+        let selectedId = configuration.selectedEntry?.id
+        var matchingEntry: DdayEntry? = nil
+        if let selectedId {
+            let allEntries = (try? await IosDdayStorage(suiteName: "group.com.example.widgetly").readAll()) ?? []
+            matchingEntry = allEntries.first { $0.id == selectedId }
         }
-        let allEntries = (try? await IosDdayStorage(suiteName: "group.com.example.widgetly").readAll()) ?? []
-        let matchingEntry = allEntries.first { $0.id == selectedId }
-        let label = DdayCalculatorKt.ddayDisplayLabel(entry: matchingEntry, today: date.toKotlinLocalDate())
-        return SimpleEntry(date: date, label: label)
+        let state = mapToWidgetState(entry: matchingEntry, themeId: configuration.selectedTheme?.id, today: date)
+        let label = selectedId == nil ? "설정 필요" : state.label
+        return SimpleEntry(
+            date: date,
+            label: label,
+            backgroundColorArgb: state.backgroundColorArgb,
+            foregroundColorArgb: state.foregroundColorArgb
+        )
     }
 }
 
@@ -60,6 +101,7 @@ struct DdayWidgetExtensionEntryView: View {
 
     var body: some View {
         Text(entry.label)
+            .foregroundStyle(Color(argb: entry.foregroundColorArgb))
     }
 }
 
@@ -69,7 +111,7 @@ struct DdayWidgetExtension: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             DdayWidgetExtensionEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(Color(argb: entry.backgroundColorArgb), for: .widget)
         }
     }
 }
@@ -77,6 +119,7 @@ struct DdayWidgetExtension: Widget {
 #Preview(as: .systemSmall) {
     DdayWidgetExtension()
 } timeline: {
-    SimpleEntry(date: .now, label: "D-DAY")
-    SimpleEntry(date: .now, label: "삭제됨")
+    let defaultTheme = ThemeCatalog.shared.find(id: ThemeCatalog.shared.DEFAULT_THEME_ID)
+    SimpleEntry(date: .now, label: "D-DAY", backgroundColorArgb: defaultTheme.backgroundColorArgb, foregroundColorArgb: defaultTheme.foregroundColorArgb)
+    SimpleEntry(date: .now, label: "삭제됨", backgroundColorArgb: defaultTheme.backgroundColorArgb, foregroundColorArgb: defaultTheme.foregroundColorArgb)
 }
