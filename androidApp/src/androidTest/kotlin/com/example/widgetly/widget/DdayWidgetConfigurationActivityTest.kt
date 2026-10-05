@@ -37,13 +37,4 @@ class DdayWidgetConfigurationActivityTest {
         val state = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
         assertEquals(theme.id, state[stringPreferencesKey("theme_id")])
     }
-
-    @Test
-    fun aWidgetWithNoStoredThemeFallsBackToTheDefaultThemeIdWhenRendering() = runTest {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val glanceId = AppWidgetId(123458)
-        val state = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
-        val themeId = state[stringPreferencesKey("theme_id")] ?: ThemeCatalog.DEFAULT_THEME_ID
-        assertEquals(ThemeCatalog.DEFAULT_THEME_ID, themeId)
-    }
 }

@@ -17,6 +17,8 @@
 | 3 | 위젯이 가리키는 디데이가 삭제됐을 때 "삭제됨", 아직 선택 안 했을 때 "설정 필요"로 구분 표시 | 수정함, 실기기에서 상태 전환 확인 완료(행 2와 동일 수정으로 해결됨) | 확인 필요 — 코드는 동일 패턴으로 구현(`DdayWidgetExtension.swift`), 실기기/시뮬레이터 렌더링 미검증 | |
 | 4 | 위젯 구성 화면(설정 액티비티)이 비어있을 때(디데이 하나도 없을 때) 안내 문구 없음 | 수정함 — 행 1과 같은 패스에서 빈 상태 안내 문구 + "앱에서 디데이 만들기" 버튼 추가 | 해당 없음 — iOS는 `WidgetConfigurationIntent`의 AppIntents 피커가 OS 표준 UI라 같은 종류의 "빈 화면" 문제가 안 생김 | `DdayWidgetConfigurationActivity.kt` |
 | 5 | 위젯 설정 화면에서 디데이를 선택해도 홈 화면 위젯이 "설정 필요" 상태로 멈춰 있음 (선택이 반영 안 됨) | **수정함(2026-10-05), 실기기 확인 완료.** 행 2와 동일한 근본 원인(Glance 세션 재사용 시 `provideGlance()`가 재호출되지 않음) | 확인 필요 — iOS 설정 피커(AppIntents)는 OS가 선택 즉시 `getTimeline`을 새로 호출하는 구조라 구조적으로 이 버그 클래스가 없을 가능성이 높지만, 실기기/시뮬레이터 미확인 | `DdayGlanceWidget.kt`, `DdayWidgetConfigurationActivity.kt` |
+| 6 | 테마 시스템(Plan 2) — 위젯에 고정 색상(배경/글자) 적용, 설정 화면에서 선택 | 구현함(2026-10-05), **실기기 확인 완료** — `라벤더`/`민트`/`선셋` 각각 배치 직후 올바른 색으로 렌더링됨, 재구성(아래 행 7)으로 테마 변경도 확인 | 확인 필요 — 빌드(`xcodebuild build`, 위젯 익스텐션 타겟 포함) 성공 + 시뮬레이터 설치/실행까지만 확인함. `simctl`에는 adb 같은 터치 합성 CLI가 없어 "위젯 추가 → 설정 화면 열기 → 테마 선택"을 실제로 조작해 화면을 보는 것 자체가 불가능 — 사용자가 Xcode/시뮬레이터에서 직접 눌러봐야 함. `Color(argb:)`(ARGB Int64 → SwiftUI Color 변환, `DdayWidgetExtension.swift`)는 코드 리뷰로 채널 순서까지 수동 검증했지만 자동/시각 검증은 없음 | `Theme.kt`, `DdayGlanceWidget.kt`, `DdayWidgetConfigurationActivity.kt`, `AppIntent.swift`, `DdayWidgetExtension.swift` |
+| 7 | 테마 시스템 — 위젯을 홈 화면에 배치한 뒤에도 테마를 바꿀 수 있어야 함 | **구조적 비대칭 발견, 수정함(2026-10-05).** `dday_widget_info.xml`에 `android:widgetFeatures="reconfigurable"`이 없으면 런처가 재구성 진입점을 전혀 안 줘서, 배치 후에는 테마를 절대 못 바꾸고 위젯을 지우고 새로 추가해야 했음 — 추가 후 실기기에서 길게 눌러 연필 아이콘(편집) 확인, 탭해서 라벤더→민트→선셋 전환까지 확인 | 가능(확인됨, 정상) — WidgetKit은 `AppIntentConfiguration` 위젯에 길게 눌러 "위젯 편집" 진입점을 OS가 기본 제공하므로 이 버그 클래스 자체가 Android만의 문제였음 | `dday_widget_info.xml` |
 
 ## 사용법
 

@@ -25,8 +25,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.background
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -112,8 +114,10 @@ class DdayWidgetConfigurationActivity : ComponentActivity() {
                                 items(ThemeCatalog.all, key = { it.id }) { theme ->
                                     Text(
                                         text = theme.name,
+                                        color = Color(theme.foregroundColorArgb),
                                         modifier = Modifier
                                             .fillMaxWidth()
+                                            .background(Color(theme.backgroundColorArgb))
                                             .clickable { confirmSelection(selectedEntryId!!, theme) }
                                             .padding(horizontal = 24.dp, vertical = 20.dp),
                                     )
