@@ -48,3 +48,4 @@
 - `docs/firebase-pairing.md` — 커플·친구 연결, Firestore 스키마, 무료 티어 제약 *(설계 확정 후 작성)*
 - `docs/billing-iap.md` — Google Play Billing / StoreKit 연동 *(MVP 이후 단계에서 작성)*
 - `docs/design-guidelines.md` — 비주얼 아이덴티티, 타겟 감성 가이드 *(UI 설계 단계에서 작성)*
+- `docs/cross-platform-verification.md` — **사용자는 Android만 실기기 테스트 가능.** Android에서 버그를 발견/수정할 때마다 여기 기록하고 iOS 쪽 확인 여부를 추적한다. 플랫폼별 버그 수정 시 반드시 갱신.
