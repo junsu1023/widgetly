@@ -53,6 +53,7 @@ class SendSignalAction : ActionCallback {
 개인 디데이 위젯(Plan 1) 구현 중 발견한, 지금 당장은 아니지만 나중에 손봐야 할 것들.
 
 - **Glance 세션 재사용 패턴을 커플·친구 공유 위젯(Plan 4)에도 반드시 그대로 적용할 것.** `GlanceAppWidget.provideGlance()`는 위젯 세션당 한 번만 호출되고, `update()`/`updateAll()`은 기존 세션을 재사용하며 `provideContent{}`의 컴포저블만 재구성한다. `provideGlance()` 안에서 상태를 한 번만 읽어 컴포저블 람다에 캡처하면 이후 어떤 갱신도 반영되지 않는다(2026-10-05에 개인 위젯에서 실제로 겪은 버그, `docs/cross-platform-verification.md` #2/#5 참고). 공유 위젯도 같은 `GlanceAppWidget` 기반이므로 상태는 `currentState()`로 컴포저블 내부에서 반응형으로 읽고, "선택된 대상은 그대로인데 내용만 바뀐" 경우를 위해 refresh-token 패턴(또는 동급 장치)을 처음부터 넣어야 한다.
-- **위젯 디자인이 아직 placeholder 수준.** 흰 배경 박스 + 검은 Bold 텍스트뿐 — 테마 시스템(Plan 2) 적용 시 같이 다듬어야 한다.
+- **위젯 레이아웃/타이포그래피가 아직 placeholder 수준.** 테마 시스템(Plan 2)으로 배경/글자 색상은 적용했지만, `Box` + 가운데 정렬 `Text` 뿐인 레이아웃 자체는 그대로다 — 다음 작은 UI 패스에서 다듬을 것.
 - **2×1 외의 리사이즈 상태는 실기기 미검증.** `resizeMode="horizontal|vertical"`을 허용해뒀지만, 사용자가 위젯을 확대/축소했을 때 레이아웃이 실제로 어떻게 보이는지는 아직 확인 안 함.
 - iOS 쪽 동일 버그 클래스(세션/타임라인 재사용으로 인한 미반영) 확인 필요 — `docs/cross-platform-verification.md`에서 추적 중.
+- **`DdayWidgetExtensionTests`가 위젯 익스텐션 전용 Swift 코드(`AppIntent.swift`, `DdayWidgetExtension.swift`)를 테스트할 방법이 없다.** `project.pbxproj`상 이 타겟은 `DdayWidgetExtensionExtension`에 대한 TEST_HOST/타겟 의존성이 전혀 없는 독립 unit-test bundle이라, `mapToWidgetState` 같은 위젯 익스텐션 로컬 함수를 `@testable import`할 방법이 구조적으로 없다(Shared.framework 경계까지만 테스트 가능). 고치려면 `DdayWidgetExtension` synchronized group(`84C19F5D3073444700B9B960`)을 테스트 타겟의 `fileSystemSynchronizedGroups`에도 추가하고, `@main`이 붙은 `DdayWidgetExtensionBundle.swift`는 멤버십 예외로 빼면 된다 — pbxproj 한두 줄 수준의 작업으로 추정되지만 빌드 구성 변경이라 기능 커밋에 끼워넣지 않고 별도로 처리할 것(2026-10-05 테마 시스템 플랜 최종 리뷰에서 발견).
