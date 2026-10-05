@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required on API 33+ for WidgetlyFirebaseMessagingService's pairing-success
+         notification (Fix Round 1, task-4 review) to actually post; requested at
+         runtime from MainActivity. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".WidgetlyApplication"

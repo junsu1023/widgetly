@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -55,7 +56,14 @@ fun PairingScreen(viewModel: PairingViewModel) {
             when (val current = state) {
                 PairingUiState.Idle -> {}
                 is PairingUiState.CodeCreated -> Text("생성된 코드: ${current.code}")
-                is PairingUiState.Connected -> Text("연결되었습니다: ${current.connectionId}")
+                is PairingUiState.Connected -> {
+                    // Fix Round 1 (task-4 review): this was plain Text before, so
+                    // the redeemer had no way to actually copy the connectionId
+                    // they need to paste into the widget's config screen.
+                    SelectionContainer {
+                        Text("연결되었습니다: ${current.connectionId}")
+                    }
+                }
                 is PairingUiState.Error -> Text("오류: ${current.message}")
             }
         }

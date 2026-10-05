@@ -9,6 +9,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.connection.WidgetlyFunctions
+import com.google.firebase.functions.FirebaseFunctionsException
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 
@@ -40,9 +41,18 @@ class SendSignalWorker @JvmOverloads constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: IOException) {
-            // Offline / timeout / DNS failure etc. WorkManager already retries with
-            // its own backoff policy, so no custom delay logic is needed here.
+            // Offline / timeout / DNS failure at the transport layer (doesn't go
+            // through the callable protocol at all). WorkManager already retries
+            // with its own backoff policy, so no custom delay logic is needed here.
             return Result.retry()
+        } catch (e: FirebaseFunctionsException) {
+            // What the real SDK actually throws for a callable failure: the
+            // gitlive KMP wrapper passes Android's FirebaseFunctionsException
+            // through unwrapped (it just awaits the underlying Task). Only its
+            // transient/network-class codes should be retried - a genuine
+            // client error (e.g. invalid-argument) would just fail the same way
+            // again and again, wasting WorkManager's retry budget forever.
+            return if (e.code in TRANSIENT_FUNCTIONS_CODES) Result.retry() else Result.failure()
         }
 
         if (signalResult.rateLimited) {
@@ -59,6 +69,17 @@ class SendSignalWorker @JvmOverloads constructor(
         const val KEY_CONNECTION_ID = "connectionId"
         const val KEY_PRESET = "preset"
         const val KEY_SIGNAL_ID = "signalId"
+
+        // Codes that represent a transient/network-class failure rather than a
+        // permanent one (bad input, auth, rate limit is handled separately via
+        // the rateLimited result field, not an exception).
+        private val TRANSIENT_FUNCTIONS_CODES = setOf(
+            FirebaseFunctionsException.Code.UNAVAILABLE,
+            FirebaseFunctionsException.Code.DEADLINE_EXCEEDED,
+            FirebaseFunctionsException.Code.INTERNAL,
+            FirebaseFunctionsException.Code.UNKNOWN,
+            FirebaseFunctionsException.Code.ABORTED,
+        )
 
         private suspend fun markRateLimited(context: Context, connectionId: String) {
             val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(ConnectionGlanceWidget::class.java)
