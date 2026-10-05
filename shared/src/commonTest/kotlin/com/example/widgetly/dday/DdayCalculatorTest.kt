@@ -6,6 +6,17 @@ import kotlin.test.assertEquals
 
 class DdayCalculatorTest {
     @Test
+    fun `missing entry maps to a deleted label`() {
+        assertEquals("삭제됨", ddayDisplayLabel(null, LocalDate(2026, 10, 5)))
+    }
+
+    @Test
+    fun `existing entry maps to its calculated label`() {
+        val entry = DdayEntry("1", "t", LocalDate(2026, 10, 5), CountMode.START_AT_ZERO, RepeatMode.NONE)
+        assertEquals("D-DAY", ddayDisplayLabel(entry, LocalDate(2026, 10, 5)))
+    }
+
+    @Test
     fun `today is D-DAY`() {
         val entry = DdayEntry("1", "t", LocalDate(2026, 10, 4), CountMode.START_AT_ZERO, RepeatMode.NONE)
         assertEquals(DdayResult("D-DAY", 0), calculateDday(entry, LocalDate(2026, 10, 4)))

@@ -22,6 +22,9 @@ fun calculateDday(entry: DdayEntry, today: LocalDate): DdayResult {
     return DdayResult(label, calendarDiffDays)
 }
 
+fun ddayDisplayLabel(entry: DdayEntry?, today: LocalDate): String =
+    entry?.let { calculateDday(it, today).label } ?: "삭제됨"
+
 private fun effectiveTargetDate(entry: DdayEntry, today: LocalDate): LocalDate {
     if (entry.repeat != RepeatMode.YEARLY) return entry.targetDate
 
