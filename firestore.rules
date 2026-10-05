@@ -1,13 +1,25 @@
 rules_version = '2';
-
-// Skeleton: denies all client reads/writes by default.
-// Task 2 fills in per-collection rules (users, tokens, connections, etc).
-// signals/pairingCodes/codeAttempts stay server-only (Cloud Functions callable,
-// via the Admin SDK, which bypasses these rules) and are never opened to clients.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    match /users/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nickname'])
+                    && request.resource.data.nickname is string;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false;
+      match /tokens/{tokenId} { allow read, write: if false; }
     }
+    match /connections/{connectionId} {
+      allow get: if request.auth != null && request.auth.uid in resource.data.memberUids;
+      allow list, create, update, delete: if false;
+      match /signals/{signalId} {
+        allow get: if request.auth != null
+                    && request.auth.uid in get(/databases/$(database)/documents/connections/$(connectionId)).data.memberUids;
+        allow list, create, update, delete: if false;
+      }
+    }
+    match /pairingCodes/{code} { allow read, write: if false; }
+    match /codeAttempts/{uid} { allow read, write: if false; }
   }
 }
