@@ -1,23 +1,17 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { Firestore, Timestamp } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
+import type { Messaging } from "firebase-admin/messaging";
 import { db } from "./index";
 import type { ConnectionDoc, SignalDoc } from "./lib/types";
 import { sendPushToPartner } from "./lib/push";
+import { toSeoulDateString } from "./lib/dates";
+
+export { toSeoulDateString };
 
 const RATE_LIMIT_SECONDS = 5;
 const SIGNAL_EXPIRY_DAYS = 30;
-
-export function toSeoulDateString(ts: Timestamp): string {
-  // en-CA formats as YYYY-MM-DD; Asia/Seoul is a fixed UTC+9 offset (no DST),
-  // but Intl handles the conversion correctly without hand-rolled ms math.
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(ts.toDate());
-}
+const MAX_PRESET_LENGTH = 32;
 
 type SendSignalInput = { connectionId: string; preset: string; signalId: string };
 
@@ -25,7 +19,8 @@ export async function sendSignalLogic(
   uid: string,
   input: SendSignalInput,
   firestore: Firestore,
-  now: Timestamp
+  now: Timestamp,
+  messaging: Messaging = getMessaging()
 ): Promise<{ rateLimited: boolean }> {
   const { connectionId, preset, signalId } = input;
   if (!connectionId || typeof connectionId !== "string") {
@@ -33,6 +28,9 @@ export async function sendSignalLogic(
   }
   if (!preset || typeof preset !== "string") {
     throw new HttpsError("invalid-argument", "preset is required");
+  }
+  if (preset.length > MAX_PRESET_LENGTH) {
+    throw new HttpsError("invalid-argument", `preset must be at most ${MAX_PRESET_LENGTH} characters`);
   }
   if (!signalId || typeof signalId !== "string") {
     throw new HttpsError("invalid-argument", "signalId is required");
@@ -121,10 +119,17 @@ export async function sendSignalLogic(
   });
 
   if (shouldPush && partnerUidForPush) {
-    await sendPushToPartner(getMessaging(), firestore, partnerUidForPush, connectionId, {
-      title: "새로운 신호",
-      body: "상대방이 신호를 보냈어요",
-    });
+    await sendPushToPartner(
+      messaging,
+      firestore,
+      partnerUidForPush,
+      connectionId,
+      {
+        title: "새로운 신호",
+        body: "상대방이 신호를 보냈어요",
+      },
+      { connectionId, presetType: preset, senderUid: uid }
+    );
   }
 
   return { rateLimited };

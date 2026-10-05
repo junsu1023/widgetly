@@ -1,23 +1,36 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { Firestore, Timestamp } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
+import type { Messaging } from "firebase-admin/messaging";
 import { db } from "./index";
 import type { ConnectionDoc, PairingCodeDoc } from "./lib/types";
-import { checkAndRecordFailure, resetAttempts } from "./lib/codeAttempts";
-
-function toDateString(ts: Timestamp): string {
-  return ts.toDate().toISOString().slice(0, 10);
-}
+import { checkAndRecordFailure, resetAttempts, isLockedOut } from "./lib/codeAttempts";
+import { toSeoulDateString } from "./lib/dates";
+import { sendPushToPartner } from "./lib/push";
 
 export async function redeemPairingCodeLogic(
   uid: string,
   input: { code: string },
   firestore: Firestore,
-  now: Timestamp
+  now: Timestamp,
+  messaging: Messaging = getMessaging()
 ): Promise<{ connectionId: string }> {
   const code = input.code;
   if (!code || typeof code !== "string") {
     throw new HttpsError("invalid-argument", "code is required");
   }
+
+  // Lockout must be checked BEFORE attempting a redemption, not only recorded
+  // after a failure — otherwise an already-locked-out uid can still redeem a
+  // VALID code, which defeats the brute-force protection entirely.
+  if (await isLockedOut(firestore, uid, now)) {
+    throw new HttpsError(
+      "resource-exhausted",
+      "Too many failed attempts, locked out. Try again later."
+    );
+  }
+
+  let creatorUidForPush: string | null = null;
 
   try {
     const connectionId = await firestore.runTransaction(async (tx) => {
@@ -47,18 +60,31 @@ export async function redeemPairingCodeLogic(
         throw new HttpsError("invalid-argument", "Cannot redeem your own pairing code");
       }
 
-      if (codeData.type === "couple") {
-        const existingCoupleConnections = await tx.get(
+      const hasActiveCoupleConnection = async (checkUid: string): Promise<boolean> => {
+        const snap = await tx.get(
           firestore
             .collection("connections")
-            .where("memberUids", "array-contains", uid)
+            .where("memberUids", "array-contains", checkUid)
             .where("type", "==", "couple")
             .where("status", "==", "active")
         );
-        if (!existingCoupleConnections.empty) {
+        return !snap.empty;
+      };
+
+      if (codeData.type === "couple") {
+        // Check both sides of the pairing: a redeemer OR a creator who's
+        // already in an active couple connection must not end up in a
+        // second one — the cap exists to prevent exactly that.
+        if (await hasActiveCoupleConnection(uid)) {
           throw new HttpsError(
             "already-exists",
             "already-exists: caller already has an active couple connection"
+          );
+        }
+        if (await hasActiveCoupleConnection(codeData.creatorUid)) {
+          throw new HttpsError(
+            "already-exists",
+            "already-exists: creator already has an active couple connection"
           );
         }
       }
@@ -69,7 +95,7 @@ export async function redeemPairingCodeLogic(
         type: codeData.type,
         status: "active",
         createdAt: now,
-        anniversaryDate: toDateString(now),
+        anniversaryDate: toSeoulDateString(now),
         anniversaryUpdatedBy: uid,
         streak: 0,
         streakUpdatedDate: "",
@@ -78,12 +104,29 @@ export async function redeemPairingCodeLogic(
       tx.set(connectionRef, connectionDoc);
       tx.delete(codeSnap.ref);
 
+      creatorUidForPush = codeData.creatorUid;
       return connectionRef.id;
     });
 
     // A successful redemption proves the caller wasn't guessing; clear their
     // failure history so it doesn't carry over to future legitimate attempts.
     await resetAttempts(firestore, uid);
+
+    // Notify the code creator too — they have no other way to learn that
+    // pairing happened or what connectionId resulted from it.
+    if (creatorUidForPush) {
+      await sendPushToPartner(
+        messaging,
+        firestore,
+        creatorUidForPush,
+        connectionId,
+        {
+          title: "연결 완료",
+          body: "상대방과 연결되었어요",
+        },
+        { connectionId }
+      );
+    }
 
     return { connectionId };
   } catch (error) {

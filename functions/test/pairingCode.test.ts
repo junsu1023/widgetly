@@ -1,8 +1,10 @@
-import { beforeEach, describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import { Firestore, Timestamp } from "firebase-admin/firestore";
+import type { Messaging } from "firebase-admin/messaging";
 import { createPairingCodeLogic, createPairingCode } from "../src/createPairingCode";
 import { redeemPairingCodeLogic, redeemPairingCode } from "../src/redeemPairingCode";
 import { db as indexDb } from "../src/index";
+import { upsertToken } from "../src/lib/tokens";
 import type { CallableRequest } from "firebase-functions/v2/https";
 import { HttpsError } from "firebase-functions/v2/https";
 import type { ConnectionDoc } from "../src/lib/types";
@@ -39,6 +41,7 @@ beforeEach(async () => {
   await clearCollection("pairingCodes");
   await clearCollection("codeAttempts");
   await clearCollection("connections");
+  await firestore.recursiveDelete(firestore.collection(`users/${uidA}/tokens`));
 });
 
 describe("createPairingCodeLogic", () => {
@@ -90,6 +93,30 @@ describe("redeemPairingCodeLogic", () => {
     ).rejects.toThrow(/locked/i);
   });
 
+  it("blocks a VALID code redemption outright once the caller is locked out (lockout must be enforced, not just recorded)", async () => {
+    for (let i = 0; i < 5; i++) {
+      await expect(
+        redeemPairingCodeLogic(uidB, { code: "wrong0" + i }, firestore, now)
+      ).rejects.toThrow();
+    }
+    const { code } = await createPairingCodeLogic(uidA, { type: "friend" }, firestore, now);
+
+    try {
+      await redeemPairingCodeLogic(uidB, { code }, firestore, now);
+      expect.fail("Should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpsError);
+      expect((error as HttpsError).code).toBe("resource-exhausted");
+    }
+
+    // No connection should have been created, and the valid code must still
+    // exist untouched (it was never consumed).
+    const connections = await firestore.collection("connections").get();
+    expect(connections.empty).toBe(true);
+    const codeDoc = await firestore.doc(`pairingCodes/${code}`).get();
+    expect(codeDoc.exists).toBe(true);
+  });
+
   it("treats a Firestore-path-breaking code (containing '/') as a normal failed guess, not a raw Error", async () => {
     await expect(
       redeemPairingCodeLogic(uidB, { code: "a/b" }, firestore, now)
@@ -104,6 +131,49 @@ describe("redeemPairingCodeLogic", () => {
     await expect(redeemPairingCodeLogic(uidB, { code }, firestore, now)).rejects.toThrow(
       /already-exists/
     );
+  });
+
+  it("rejects a couple code when the CREATOR already has an active couple connection, even though the redeemer doesn't", async () => {
+    await seedActiveCoupleConnection(firestore, uidA);
+    const { code } = await createPairingCodeLogic(uidA, { type: "couple" }, firestore, now);
+    await expect(redeemPairingCodeLogic(uidB, { code }, firestore, now)).rejects.toThrow(
+      /already-exists/
+    );
+    // Only the originally seeded connection should exist — no second couple
+    // connection was created for the creator.
+    const connections = await firestore.collection("connections").get();
+    expect(connections.size).toBe(1);
+  });
+
+  it("computes anniversaryDate using the Seoul-local date, not UTC", async () => {
+    const createdAt = Timestamp.fromDate(new Date("2026-01-01T15:25:00Z"));
+    const { code } = await createPairingCodeLogic(uidA, { type: "friend" }, firestore, createdAt);
+    // 2026-01-01 15:30 UTC == 2026-01-02 00:30 KST (UTC+9) — same boundary
+    // timestamp used in sendSignal.test.ts's toSeoulDateString tests.
+    const redeemTime = Timestamp.fromDate(new Date("2026-01-01T15:30:00Z"));
+    const { connectionId } = await redeemPairingCodeLogic(uidB, { code }, firestore, redeemTime);
+    const conn = await firestore.doc(`connections/${connectionId}`).get();
+    expect(conn.get("anniversaryDate")).toBe("2026-01-02");
+  });
+
+  it("notifies the code creator with a push containing the new connectionId on successful redemption", async () => {
+    const send = vi.fn().mockResolvedValue("ok");
+    const fakeMessaging = { send } as unknown as Messaging;
+    await upsertToken(firestore, uidA, "creator-token", "android");
+
+    const { code } = await createPairingCodeLogic(uidA, { type: "friend" }, firestore, now);
+    const { connectionId } = await redeemPairingCodeLogic(
+      uidB,
+      { code },
+      firestore,
+      now,
+      fakeMessaging
+    );
+
+    expect(send).toHaveBeenCalledTimes(1);
+    const sentMessage = send.mock.calls[0][0];
+    expect(sentMessage.token).toBe("creator-token");
+    expect(sentMessage.data).toEqual({ connectionId });
   });
 
   it("does not count already-exists rejections toward the lockout counter", async () => {

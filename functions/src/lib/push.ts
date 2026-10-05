@@ -7,7 +7,11 @@ export async function sendPushToPartner(
   firestore: Firestore,
   partnerUid: string,
   connectionId: string,
-  payload: { title: string; body: string }
+  payload: { title: string; body: string },
+  // FCM data payloads must be string-valued. Android needs this to arrive as
+  // a data message so onMessageReceived fires even when the app is
+  // backgrounded, and it tells the client which connection changed.
+  data: Record<string, string>
 ): Promise<void> {
   const tokens = await listTokens(firestore, partnerUid);
 
@@ -16,6 +20,7 @@ export async function sendPushToPartner(
       await messaging.send({
         token,
         notification: { title: payload.title, body: payload.body },
+        data,
         android: { collapseKey: connectionId },
         apns: { headers: { "apns-collapse-id": connectionId } },
       });

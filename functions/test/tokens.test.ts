@@ -125,6 +125,44 @@ describe("registerFcmToken (callable)", () => {
     }
   });
 
+  it("with a token containing '/' throws HttpsError with invalid-argument code (not a raw Firestore path error)", async () => {
+    const request: CallableRequest<{ token: string; platform: "android" | "ios" }> = {
+      data: { token: "abc/def", platform: "android" },
+      auth: {
+        uid: uidA,
+        token: {} as any,
+        rawToken: "fake-token",
+      },
+    };
+
+    try {
+      await registerFcmToken.run(request);
+      expect.fail("Should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpsError);
+      expect((error as HttpsError).code).toBe("invalid-argument");
+    }
+  });
+
+  it("with an oversized token throws HttpsError with invalid-argument code", async () => {
+    const request: CallableRequest<{ token: string; platform: "android" | "ios" }> = {
+      data: { token: "a".repeat(600), platform: "android" },
+      auth: {
+        uid: uidA,
+        token: {} as any,
+        rawToken: "fake-token",
+      },
+    };
+
+    try {
+      await registerFcmToken.run(request);
+      expect.fail("Should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpsError);
+      expect((error as HttpsError).code).toBe("invalid-argument");
+    }
+  });
+
   it("does not accept client-supplied uid, uses auth.uid instead", async () => {
     const request: CallableRequest<{ token: string; platform: "android" | "ios" }> = {
       data: { token: "tok-1", platform: "android" },

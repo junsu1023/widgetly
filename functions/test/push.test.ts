@@ -24,10 +24,14 @@ describe("sendPushToPartner", () => {
     const fakeMessaging = { send } as unknown as Messaging;
     await upsertToken(firestore, partnerUid, "tok-1", "android");
 
-    await sendPushToPartner(fakeMessaging, firestore, partnerUid, connectionId, {
-      title: "t",
-      body: "b",
-    });
+    await sendPushToPartner(
+      fakeMessaging,
+      firestore,
+      partnerUid,
+      connectionId,
+      { title: "t", body: "b" },
+      { connectionId }
+    );
 
     const sentMessage = send.mock.calls[0][0];
     expect(sentMessage.android.collapseKey).toBe(connectionId);
@@ -43,10 +47,14 @@ describe("sendPushToPartner", () => {
     await upsertToken(firestore, partnerUid, "bad-token", "android");
     await upsertToken(firestore, partnerUid, "good-token", "android");
 
-    await sendPushToPartner(fakeMessaging, firestore, partnerUid, connectionId, {
-      title: "t",
-      body: "b",
-    });
+    await sendPushToPartner(
+      fakeMessaging,
+      firestore,
+      partnerUid,
+      connectionId,
+      { title: "t", body: "b" },
+      { connectionId }
+    );
 
     expect(await listTokens(firestore, partnerUid)).toEqual(["good-token"]);
     expect(send).toHaveBeenCalledTimes(2);
@@ -57,10 +65,14 @@ describe("sendPushToPartner", () => {
     const fakeMessaging = { send } as unknown as Messaging;
     await upsertToken(firestore, partnerUid, "flaky-token", "android");
 
-    await sendPushToPartner(fakeMessaging, firestore, partnerUid, connectionId, {
-      title: "t",
-      body: "b",
-    });
+    await sendPushToPartner(
+      fakeMessaging,
+      firestore,
+      partnerUid,
+      connectionId,
+      { title: "t", body: "b" },
+      { connectionId }
+    );
 
     expect(await listTokens(firestore, partnerUid)).toEqual(["flaky-token"]);
   });
@@ -69,11 +81,33 @@ describe("sendPushToPartner", () => {
     const send = vi.fn();
     const fakeMessaging = { send } as unknown as Messaging;
 
-    await sendPushToPartner(fakeMessaging, firestore, partnerUid, connectionId, {
-      title: "t",
-      body: "b",
-    });
+    await sendPushToPartner(
+      fakeMessaging,
+      firestore,
+      partnerUid,
+      connectionId,
+      { title: "t", body: "b" },
+      { connectionId }
+    );
 
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it("includes the given data payload in the sent FCM message", async () => {
+    const send = vi.fn().mockResolvedValue("ok");
+    const fakeMessaging = { send } as unknown as Messaging;
+    await upsertToken(firestore, partnerUid, "tok-1", "android");
+
+    await sendPushToPartner(
+      fakeMessaging,
+      firestore,
+      partnerUid,
+      connectionId,
+      { title: "t", body: "b" },
+      { connectionId, presetType: "heart" }
+    );
+
+    const sentMessage = send.mock.calls[0][0];
+    expect(sentMessage.data).toEqual({ connectionId, presetType: "heart" });
   });
 });

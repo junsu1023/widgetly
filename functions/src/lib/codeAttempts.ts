@@ -41,6 +41,29 @@ export async function checkAndRecordFailure(
   });
 }
 
+/**
+ * Read-only check: is `uid` currently locked out (failCount >= MAX_CODE_ATTEMPTS
+ * within the still-live LOCKOUT_WINDOW_MINUTES window)? Must be called BEFORE
+ * attempting a redemption so an already-locked-out uid is blocked outright,
+ * not just penalized on the next wrong guess. Does not record anything.
+ */
+export async function isLockedOut(
+  firestore: Firestore,
+  uid: string,
+  now: Timestamp
+): Promise<boolean> {
+  const snap = await firestore.doc(`codeAttempts/${uid}`).get();
+  if (!snap.exists) {
+    return false;
+  }
+  const existing = snap.data() as CodeAttemptsDoc;
+  const windowCutoffMs = now.toMillis() - LOCKOUT_WINDOW_MINUTES * 60 * 1000;
+  if (existing.windowStart.toMillis() < windowCutoffMs) {
+    return false;
+  }
+  return existing.failCount >= MAX_CODE_ATTEMPTS;
+}
+
 /** Clears a uid's failed-attempt history, e.g. after a successful redemption. */
 export async function resetAttempts(firestore: Firestore, uid: string): Promise<void> {
   await firestore.doc(`codeAttempts/${uid}`).delete();

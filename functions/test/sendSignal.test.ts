@@ -194,6 +194,24 @@ describe("sendSignalLogic", () => {
     ).rejects.toThrow(HttpsError);
   });
 
+  it("rejects an oversized preset with invalid-argument, before touching the connection", async () => {
+    await seedConnection(firestore, connectionId, [uidA, uidB]);
+    try {
+      await sendSignalLogic(
+        uidA,
+        { connectionId, preset: "x".repeat(33), signalId: "sig-oversized" },
+        firestore,
+        now
+      );
+      expect.fail("Should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpsError);
+      expect((error as HttpsError).code).toBe("invalid-argument");
+    }
+    const signals = await firestore.collection(`connections/${connectionId}/signals`).get();
+    expect(signals.empty).toBe(true);
+  });
+
   it("treats a path-breaking connectionId (containing '/') as a normal not-found/failed-precondition HttpsError, not a raw Error", async () => {
     await expect(
       sendSignalLogic(
