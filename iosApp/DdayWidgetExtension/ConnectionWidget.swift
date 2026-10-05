@@ -10,6 +10,7 @@ import Shared
 
 private let appGroupSuiteName = "group.com.example.widgetly"
 private let rateLimitedAtKeyPrefix = "connection_rate_limited_at_"
+private let sendFailedAtKeyPrefix = "connection_send_failed_at_"
 private let authTokenKey = "firebase_id_token"
 private let rateLimitWindowSeconds: TimeInterval = 5
 
@@ -36,6 +37,23 @@ private func markRateLimited(connectionId: String) {
     UserDefaults(suiteName: appGroupSuiteName)?.set(
         Date().timeIntervalSince1970,
         forKey: rateLimitedAtKeyPrefix + connectionId
+    )
+}
+
+// Mirrors the rate-limited flag above (same App Group read/write/expiry
+// pattern) so a failed send isn't silently swallowed — see the `try?` site
+// in SendSignalIntent.perform() for what this covers and what it doesn't.
+private func isSendFailed(connectionId: String) -> Bool {
+    guard let defaults = UserDefaults(suiteName: appGroupSuiteName) else { return false }
+    let setAt = defaults.double(forKey: sendFailedAtKeyPrefix + connectionId)
+    guard setAt > 0 else { return false }
+    return Date().timeIntervalSince1970 - setAt < rateLimitWindowSeconds
+}
+
+private func markSendFailed(connectionId: String) {
+    UserDefaults(suiteName: appGroupSuiteName)?.set(
+        Date().timeIntervalSince1970,
+        forKey: sendFailedAtKeyPrefix + connectionId
     )
 }
 
@@ -79,13 +97,27 @@ struct SendSignalIntent: AppIntent {
         }
 
         let client = SendSignalHttpClient()
-        if let result = try? await client.sendSignal(
-            connectionId: connectionId,
-            preset: "heart",
-            signalId: UUID().uuidString,
-            authToken: authToken
-        ), result.rateLimited {
-            markRateLimited(connectionId: connectionId)
+        do {
+            let result = try await client.sendSignal(
+                connectionId: connectionId,
+                preset: "heart",
+                signalId: UUID().uuidString,
+                authToken: authToken
+            )
+            if result.rateLimited {
+                markRateLimited(connectionId: connectionId)
+            }
+        } catch {
+            // ponytail: no automatic retry here — a WorkManager-style retry
+            // queue for App Intents run from a widget is a real mechanism
+            // (background task scheduling + persistence across process
+            // death), not something to improvise in a few lines. This at
+            // least stops swallowing the failure: the next timeline render
+            // shows "전송 실패" instead of silently looking like nothing
+            // happened, matching this file's error-states-are-visible
+            // convention (rateLimited, 연결 끊김). Add real retry if dropped
+            // signals turn out to matter in practice.
+            markSendFailed(connectionId: connectionId)
         }
 
         return .result()
@@ -97,11 +129,12 @@ struct ConnectionWidgetEntry: TimelineEntry {
     let connectionId: String?
     let connection: Connection?
     let rateLimited: Bool
+    let sendFailed: Bool
 }
 
 struct ConnectionWidgetProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> ConnectionWidgetEntry {
-        ConnectionWidgetEntry(date: Date(), connectionId: nil, connection: nil, rateLimited: false)
+        ConnectionWidgetEntry(date: Date(), connectionId: nil, connection: nil, rateLimited: false, sendFailed: false)
     }
 
     func snapshot(for configuration: ConnectionWidgetConfigurationIntent, in context: Context) async -> ConnectionWidgetEntry {
@@ -118,13 +151,14 @@ struct ConnectionWidgetProvider: AppIntentTimelineProvider {
 
     private func makeEntry(for configuration: ConnectionWidgetConfigurationIntent, on date: Date) -> ConnectionWidgetEntry {
         guard let connectionId = configuration.connectionId, !connectionId.isEmpty else {
-            return ConnectionWidgetEntry(date: date, connectionId: nil, connection: nil, rateLimited: false)
+            return ConnectionWidgetEntry(date: date, connectionId: nil, connection: nil, rateLimited: false, sendFailed: false)
         }
         return ConnectionWidgetEntry(
             date: date,
             connectionId: connectionId,
             connection: loadLocalConnectionSnapshot(connectionId: connectionId),
-            rateLimited: isRateLimited(connectionId: connectionId)
+            rateLimited: isRateLimited(connectionId: connectionId),
+            sendFailed: isSendFailed(connectionId: connectionId)
         )
     }
 }
@@ -139,9 +173,19 @@ struct ConnectionWidgetEntryView: View {
                     VStack(spacing: 4) {
                         Text("스트릭 \(connection.streak)")
                         if entry.rateLimited {
+                            // Retrying immediately would just hit the backend's
+                            // rate limit again, so no button while this holds.
                             Text("곧 다시 보내보세요")
                                 .font(.caption)
                         } else {
+                            // A failed send (network error, backend rejection,
+                            // malformed response) is worth retrying right away —
+                            // unlike rateLimited, keep the button live and just
+                            // add a caption so the failure isn't silent.
+                            if entry.sendFailed {
+                                Text("전송 실패, 다시 시도해주세요")
+                                    .font(.caption)
+                            }
                             Button(intent: SendSignalIntent(connectionId: connectionId)) {
                                 Text("신호 보내기")
                             }
