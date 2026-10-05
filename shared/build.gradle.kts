@@ -59,9 +59,13 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.firebase.auth)
-            implementation(libs.firebase.firestore)
-            implementation(libs.firebase.functions)
+            // api, not implementation: these GitLive types appear directly in shared's
+            // public API (FirebaseWidgetlyFunctions, FirestoreConnectionRepository,
+            // ensureSignedIn), so consumers like androidApp need them on their own
+            // compile classpath to construct/call into that API.
+            api(libs.firebase.auth)
+            api(libs.firebase.firestore)
+            api(libs.firebase.functions)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "194616527520",
+    "project_id": "widgetly-53e09",
+    "storage_bucket": "widgetly-53e09.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:194616527520:android:b679573160e58886e457c5",
+        "android_client_info": {
+          "package_name": "com.example.widgetly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmN8C5GMhkA0bTjLzGb9XnTs6EdsTF-XI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
