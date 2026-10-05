@@ -62,16 +62,19 @@ fun DdayListScreen(viewModel: DdayViewModel) {
                     value = newYear,
                     onValueChange = { newYear = it },
                     label = { Text("년") },
+                    modifier = Modifier.weight(1f),
                 )
                 OutlinedTextField(
                     value = newMonth,
                     onValueChange = { newMonth = it },
                     label = { Text("월") },
+                    modifier = Modifier.weight(1f),
                 )
                 OutlinedTextField(
                     value = newDay,
                     onValueChange = { newDay = it },
                     label = { Text("일") },
+                    modifier = Modifier.weight(1f),
                 )
             }
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
