@@ -5,7 +5,9 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import com.example.widgetly.auth.ensureSignedIn
+import com.example.widgetly.connection.ConnectionRepository
 import com.example.widgetly.connection.FirebaseWidgetlyFunctions
+import com.example.widgetly.connection.FirestoreConnectionRepository
 import com.example.widgetly.connection.WidgetlyFunctions
 import com.example.widgetly.dday.AndroidDdayStorage
 import com.example.widgetly.dday.DdayRepository
@@ -16,6 +18,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.app
 import dev.gitlive.firebase.auth.auth
+import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.functions.functions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +40,12 @@ class WidgetlyApplication : Application() {
 
     private val functions: FirebaseWidgetlyFunctions by lazy {
         FirebaseWidgetlyFunctions(Firebase.functions(Firebase.app))
+    }
+
+    // Named-database Firestore instance - see ConnectionRepository's doc comment:
+    // this client has no `(default)` database to fall back to.
+    private val connectionRepo: ConnectionRepository by lazy {
+        FirestoreConnectionRepository(Firebase.firestore(Firebase.app, "widgetly"))
     }
 
     private val applicationScope = CoroutineScope(Dispatchers.Default)
@@ -69,5 +78,6 @@ class WidgetlyApplication : Application() {
         private lateinit var instance: WidgetlyApplication
         val ddayRepository: DdayRepository get() = instance.repository
         val widgetlyFunctions: WidgetlyFunctions get() = instance.functions
+        val connectionRepository: ConnectionRepository get() = instance.connectionRepo
     }
 }

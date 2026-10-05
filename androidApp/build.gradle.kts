@@ -30,12 +30,15 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodelCompose)
 
     implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.work.runtime)
 
     androidTestImplementation(libs.androidx.testExt.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.kotlinx.datetime)
     androidTestImplementation(libs.kotlin.test)
+    androidTestImplementation(libs.androidx.work.testing)
+    androidTestImplementation(libs.androidx.glance.appwidget.testing)
 }
 
 android {
