@@ -27,12 +27,17 @@ import androidx.glance.text.TextStyle
 import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.dday.DdayEntry
 import com.example.widgetly.dday.calculateDday
+import com.example.widgetly.theme.ThemeCatalog
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 val DDAY_ENTRY_ID_KEY = stringPreferencesKey("dday_entry_id")
+
+// Generic name/type (not D-day specific) so the couple/friend shared widget plan can
+// reuse the same state key.
+val THEME_ID_KEY = stringPreferencesKey("theme_id")
 
 // Glance's stored Preferences uses structural equality: writing the same entryId again
 // does not invalidate currentState() readers, so a repository change that doesn't touch
@@ -66,26 +71,30 @@ private fun DdayWidgetContent() {
             WidgetlyApplication.ddayRepository.list().find { it.id == selectedId }
         }
     }
+    val themeId = currentState(THEME_ID_KEY)
+    val theme = ThemeCatalog.find(themeId ?: ThemeCatalog.DEFAULT_THEME_ID)
+    val backgroundColor = androidx.compose.ui.graphics.Color(theme.backgroundColorArgb)
+    val foregroundColor = androidx.compose.ui.graphics.Color(theme.foregroundColorArgb)
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(ColorProvider(day = androidx.compose.ui.graphics.Color.White, night = androidx.compose.ui.graphics.Color.White))
+            .background(ColorProvider(day = backgroundColor, night = backgroundColor))
             .cornerRadius(16.dp)
             .padding(12.dp),
         contentAlignment = Alignment.Center,
     ) {
         when {
-            entryId == null -> Text("설정 필요", style = TextStyle(fontSize = 14.sp))
+            entryId == null -> Text("설정 필요", style = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)))
             entryState === Loading -> {}
-            entryState == null -> Text("삭제됨", style = TextStyle(fontSize = 14.sp))
+            entryState == null -> Text("삭제됨", style = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)))
             else -> {
                 val entry = entryState as DdayEntry
                 val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
                 val result = calculateDday(entry, today)
                 Text(
                     "${entry.title}\n${result.label}",
-                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
                 )
             }
         }

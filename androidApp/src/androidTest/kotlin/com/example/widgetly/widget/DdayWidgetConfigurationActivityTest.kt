@@ -6,6 +6,7 @@ import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.widgetly.dday.DdayEntry
+import com.example.widgetly.theme.ThemeCatalog
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import org.junit.Test
@@ -25,5 +26,24 @@ class DdayWidgetConfigurationActivityTest {
         DdayWidgetConfigurationActivity.saveSelectedEntry(context, glanceId, sampleEntry.id)
         val state = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
         assertEquals(sampleEntry.id, state[stringPreferencesKey("dday_entry_id")])
+    }
+
+    @Test
+    fun selectingAThemeStoresItsIdInTheWidgetStateForThatGlanceId() = runTest {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val glanceId = AppWidgetId(123457)
+        val theme = ThemeCatalog.all.first { it.id != ThemeCatalog.DEFAULT_THEME_ID }
+        DdayWidgetConfigurationActivity.saveSelectedTheme(context, glanceId, theme.id)
+        val state = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
+        assertEquals(theme.id, state[stringPreferencesKey("theme_id")])
+    }
+
+    @Test
+    fun aWidgetWithNoStoredThemeFallsBackToTheDefaultThemeIdWhenRendering() = runTest {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val glanceId = AppWidgetId(123458)
+        val state = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
+        val themeId = state[stringPreferencesKey("theme_id")] ?: ThemeCatalog.DEFAULT_THEME_ID
+        assertEquals(ThemeCatalog.DEFAULT_THEME_ID, themeId)
     }
 }

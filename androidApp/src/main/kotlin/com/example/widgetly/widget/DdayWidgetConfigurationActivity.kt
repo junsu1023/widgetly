@@ -35,6 +35,8 @@ import androidx.lifecycle.lifecycleScope
 import com.example.widgetly.MainActivity
 import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.dday.DdayEntry
+import com.example.widgetly.theme.Theme
+import com.example.widgetly.theme.ThemeCatalog
 import kotlinx.coroutines.launch
 
 class DdayWidgetConfigurationActivity : ComponentActivity() {
@@ -56,43 +58,66 @@ class DdayWidgetConfigurationActivity : ComponentActivity() {
 
         setContent {
             var entries by remember { mutableStateOf<List<DdayEntry>>(emptyList()) }
+            var selectedEntryId by remember { mutableStateOf<String?>(null) }
             LaunchedEffect(Unit) {
                 entries = WidgetlyApplication.ddayRepository.list()
             }
             MaterialTheme {
                 Scaffold(
-                    topBar = { TopAppBar(title = { Text("위젯에 표시할 디데이를 선택하세요") }) },
+                    topBar = {
+                        TopAppBar(
+                            title = {
+                                Text(if (selectedEntryId == null) "위젯에 표시할 디데이를 선택하세요" else "테마를 선택하세요")
+                            },
+                        )
+                    },
                 ) { padding ->
-                    if (entries.isEmpty()) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text("아직 만든 디데이가 없어요.")
-                            Button(
-                                onClick = { startActivity(Intent(this@DdayWidgetConfigurationActivity, MainActivity::class.java)) },
-                                modifier = Modifier.padding(top = 16.dp),
+                    when {
+                        selectedEntryId == null && entries.isEmpty() -> {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Text("앱에서 디데이 만들기")
-                            }
-                            Button(
-                                onClick = { finish() },
-                                modifier = Modifier.padding(top = 8.dp),
-                            ) {
-                                Text("취소")
+                                Text("아직 만든 디데이가 없어요.")
+                                Button(
+                                    onClick = { startActivity(Intent(this@DdayWidgetConfigurationActivity, MainActivity::class.java)) },
+                                    modifier = Modifier.padding(top = 16.dp),
+                                ) {
+                                    Text("앱에서 디데이 만들기")
+                                }
+                                Button(
+                                    onClick = { finish() },
+                                    modifier = Modifier.padding(top = 8.dp),
+                                ) {
+                                    Text("취소")
+                                }
                             }
                         }
-                    } else {
-                        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
-                            items(entries, key = { it.id }) { entry ->
-                                Text(
-                                    text = entry.title,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { confirmSelection(entry.id) }
-                                        .padding(horizontal = 24.dp, vertical = 20.dp),
-                                )
+                        selectedEntryId == null -> {
+                            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+                                items(entries, key = { it.id }) { entry ->
+                                    Text(
+                                        text = entry.title,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { selectedEntryId = entry.id }
+                                            .padding(horizontal = 24.dp, vertical = 20.dp),
+                                    )
+                                }
+                            }
+                        }
+                        else -> {
+                            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+                                items(ThemeCatalog.all, key = { it.id }) { theme ->
+                                    Text(
+                                        text = theme.name,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { confirmSelection(selectedEntryId!!, theme) }
+                                            .padding(horizontal = 24.dp, vertical = 20.dp),
+                                    )
+                                }
                             }
                         }
                     }
@@ -101,10 +126,11 @@ class DdayWidgetConfigurationActivity : ComponentActivity() {
         }
     }
 
-    private fun confirmSelection(entryId: String) {
+    private fun confirmSelection(entryId: String, theme: Theme) {
         val glanceId = GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId)
         lifecycleScope.launch {
             saveSelectedEntry(this@DdayWidgetConfigurationActivity, glanceId, entryId)
+            saveSelectedTheme(this@DdayWidgetConfigurationActivity, glanceId, theme.id)
             val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             setResult(Activity.RESULT_OK, resultValue)
             finish()
@@ -115,6 +141,13 @@ class DdayWidgetConfigurationActivity : ComponentActivity() {
         suspend fun saveSelectedEntry(context: Context, glanceId: GlanceId, entryId: String) {
             updateAppWidgetState(context, glanceId) { prefs ->
                 prefs[DDAY_ENTRY_ID_KEY] = entryId
+            }
+            DdayGlanceWidget().update(context, glanceId)
+        }
+
+        suspend fun saveSelectedTheme(context: Context, glanceId: GlanceId, themeId: String) {
+            updateAppWidgetState(context, glanceId) { prefs ->
+                prefs[THEME_ID_KEY] = themeId
             }
             DdayGlanceWidget().update(context, glanceId)
         }
