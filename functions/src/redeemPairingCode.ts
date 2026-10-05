@@ -21,8 +21,17 @@ export async function redeemPairingCodeLogic(
 
   try {
     const connectionId = await firestore.runTransaction(async (tx) => {
-      const codeRef = firestore.doc(`pairingCodes/${code}`);
-      const codeSnap = await tx.get(codeRef);
+      // A malformed code (e.g. one containing "/") makes Firestore's doc-path
+      // parsing throw a plain SDK Error, not our HttpsError — fold any such
+      // failure into the same "code doesn't exist" case so it still surfaces
+      // as HttpsError('not-found', ...) and still counts as a failed guess
+      // below, instead of leaking a raw Error / skipping the lockout counter.
+      let codeSnap;
+      try {
+        codeSnap = await tx.get(firestore.doc(`pairingCodes/${code}`));
+      } catch {
+        throw new HttpsError("not-found", "Invalid or expired pairing code");
+      }
 
       if (!codeSnap.exists) {
         throw new HttpsError("not-found", "Invalid or expired pairing code");
@@ -67,7 +76,7 @@ export async function redeemPairingCodeLogic(
         lastSignalByUid: {},
       };
       tx.set(connectionRef, connectionDoc);
-      tx.delete(codeRef);
+      tx.delete(codeSnap.ref);
 
       return connectionRef.id;
     });

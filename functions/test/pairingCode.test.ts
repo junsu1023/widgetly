@@ -90,6 +90,14 @@ describe("redeemPairingCodeLogic", () => {
     ).rejects.toThrow(/locked/i);
   });
 
+  it("treats a Firestore-path-breaking code (containing '/') as a normal failed guess, not a raw Error", async () => {
+    await expect(
+      redeemPairingCodeLogic(uidB, { code: "a/b" }, firestore, now)
+    ).rejects.toThrow(HttpsError);
+    const attempts = await firestore.doc(`codeAttempts/${uidB}`).get();
+    expect(attempts.get("failCount")).toBe(1);
+  });
+
   it("rejects a couple code when the redeemer already has an active couple connection", async () => {
     await seedActiveCoupleConnection(firestore, uidB);
     const { code } = await createPairingCodeLogic(uidA, { type: "couple" }, firestore, now);
