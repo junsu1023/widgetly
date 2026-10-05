@@ -8,6 +8,8 @@ Firebase 전체(Firestore + Cloud Functions + FCM + 익명 인증)를 사용한�
 
 **Cloud Functions는 Blaze 플랜이 처음부터 필요하다** — Spark(무료) 플랜에서는 Cloud Functions 자체를 실행할 수 없다(공식 요구사항). Blaze에서도 무료 사용량이 적용되어 초기 비용은 거의 0이지만, 2nd gen Functions는 배포마다 Artifact Registry에 컨테이너 이미지를 쌓으므로 무료 구간(0.5GB)을 넘기지 않도록 이미지 정리 정책과 예산 알림을 설정해야 한다.
 
+**Firestore 데이터베이스 이름이 `(default)`가 아니라 `widgetly`다.** 프로젝트 생성 시 named database로 만들어졌기 때문에, Admin SDK는 반드시 `getFirestore(app, "widgetly")`로 명시해야 한다(`functions/src/index.ts`). 주의할 점: `firebase.json`/firebase-tools 15.x에는 에뮬레이터용 named-database 설정 항목이 공식적으로 없다 — 그런데도 에뮬레이터 jar가 Admin SDK가 요청한 database id를 그대로 받아 격리해주는 비공식 동작 덕분에 `getFirestore(app, "widgetly")`가 에뮬레이터에서도 실제로 동작한다(직접 에뮬레이터를 띄우고 교차 검증함, 2026-10-05). firebase-tools를 업그레이드했는데 named database 관련 동작이 바뀌면 이 부분을 제일 먼저 의심할 것. 또한 `@firebase/rules-unit-testing`(Firestore 보안 규칙 테스트용 라이브러리)은 named database를 아예 지원하지 않아 — 규칙 테스트는 `(default)` 네임스페이스에서 돌아간다. 규칙은 DB별로 분리되는 개념이 아니라 테스트 정확성에는 영향 없음.
+
 인증은 **익명 인증**만 사용한다 — 전화번호 인증(SMS 비용 발생 가능)을 쓰지 않기 위함. 연결은 **6자리 코드**로 한다 — Firebase Dynamic Links가 2025년 8월 종료되어 디퍼드 딥링크 기반 초대 링크를 쓸 수 없기 때문이다.
 
 ## Firestore 스키마
