@@ -11,4 +11,4 @@ export const db = getFirestore(app, "widgetly");
 export { registerFcmToken } from "./registerFcmToken";
 export { createPairingCode } from "./createPairingCode";
 export { redeemPairingCode } from "./redeemPairingCode";
-// export { sendSignal } from "./signal";
+export { sendSignal } from "./sendSignal";
