@@ -3,6 +3,7 @@ package com.example.widgetly.push
 import com.example.widgetly.connection.ConnectionType
 import com.example.widgetly.connection.SendSignalResult
 import com.example.widgetly.connection.WidgetlyFunctions
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,13 +13,16 @@ class FakeWidgetlyFunctions : WidgetlyFunctions {
     var nextCode: String = ""
     var nextConnectionId: String = ""
     var shouldThrow: Boolean = false
+    var delayMillis: Long = 0 // lets tests create a cancellation window mid-call
 
     override suspend fun registerFcmToken(token: String, platform: String) { registeredTokens += token to platform }
     override suspend fun createPairingCode(type: ConnectionType): String {
+        if (delayMillis > 0) delay(delayMillis)
         if (shouldThrow) error("createPairingCode failed")
         return nextCode
     }
     override suspend fun redeemPairingCode(code: String): String {
+        if (delayMillis > 0) delay(delayMillis)
         if (shouldThrow) error("redeemPairingCode failed")
         return nextConnectionId
     }

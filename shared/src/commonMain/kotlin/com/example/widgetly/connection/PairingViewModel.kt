@@ -2,6 +2,7 @@ package com.example.widgetly.connection
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -24,21 +25,27 @@ class PairingViewModel(private val functions: WidgetlyFunctions) : ViewModel() {
 
     fun createCode(type: ConnectionType) {
         viewModelScope.launch {
-            _state.value = runCatching { functions.createPairingCode(type) }
-                .fold(
-                    onSuccess = { PairingUiState.CodeCreated(it) },
-                    onFailure = { PairingUiState.Error(it.message ?: "코드 생성에 실패했습니다") },
-                )
+            try {
+                val code = functions.createPairingCode(type)
+                _state.value = PairingUiState.CodeCreated(code)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value = PairingUiState.Error(e.message ?: "코드 생성에 실패했습니다")
+            }
         }
     }
 
     fun redeem(code: String) {
         viewModelScope.launch {
-            _state.value = runCatching { functions.redeemPairingCode(code) }
-                .fold(
-                    onSuccess = { PairingUiState.Connected(it) },
-                    onFailure = { PairingUiState.Error(it.message ?: "코드 연결에 실패했습니다") },
-                )
+            try {
+                val connectionId = functions.redeemPairingCode(code)
+                _state.value = PairingUiState.Connected(connectionId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value = PairingUiState.Error(e.message ?: "코드 연결에 실패했습니다")
+            }
         }
     }
 }
