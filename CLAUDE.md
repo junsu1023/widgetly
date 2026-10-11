@@ -31,14 +31,18 @@
 
 - `androidApp` — Android 앱 엔트리 포인트. 홈 위젯(Glance)도 이 안에 위치.
 - `iosApp` — iOS 앱 엔트리 포인트(SwiftUI). 홈 위젯(WidgetKit) extension도 이 프로젝트 안에 위치.
-- `shared` — 공통 로직/데이터 모델/Compose Multiplatform UI(`commonMain`), 플랫폼별 구현(`androidMain`/`iosMain`).
+- `shared-core` — **Firebase에 의존하지 않는** 공통 로직/데이터 모델/Compose UI(디데이 계산, 테마, 로컬 저장). iOS 프레임워크 이름 `SharedCore`.
+- `shared` — Firebase에 의존하는 공통 코드(연결/인증/푸시) + 앱 셸 UI. `api(project(":shared-core"))`로 `shared-core`를 재노출하므로 `androidApp`/iosApp 메인 타겟은 `:shared` 하나만 보면 된다. iOS 프레임워크 이름 `Shared`.
+
+**이 분리를 합치지 말 것.** Kotlin/Native는 모듈의 의존성 그래프 전체를 하나의 정적 프레임워크 바이너리로 링크하고 미사용 cinterop 코드를 제거해주지 않는다. 그래서 `Shared.framework`를 링크하는 타겟은 실제 Firebase iOS SDK도 같이 링크해야만 링크가 된다 — iOS 홈 위젯 익스텐션(`DdayWidgetExtensionExtension`)은 Firebase SDK를 넣지 않으므로 `SharedCore.framework`만 링크한다(`import SharedCore`). Firebase를 쓰는 코드를 `shared-core`에 넣는 순간 이미 출시된 디데이 위젯의 링크가 깨진다.
 
 ## 빌드 & 테스트
 
 - Android 앱: `./gradlew :androidApp:assembleDebug`
 - iOS 앱: `/iosApp` 디렉토리를 Xcode로 열어서 실행
-- Android 테스트: `./gradlew :shared:testAndroidHostTest`
-- iOS 테스트: `./gradlew :shared:iosSimulatorArm64Test`
+- Android 테스트: `./gradlew :shared-core:testAndroidHostTest :shared:testAndroidHostTest`
+- iOS 테스트: `./gradlew :shared-core:iosSimulatorArm64Test` (`:shared:iosSimulatorArm64Test`는 Xcode SPM으로 `firebase-ios-sdk`를 추가하는 수동 작업이 끝날 때까지 `ld: framework 'FirebaseCore' not found`로 실패 — `docs/widget-development.md` 참고)
+- iOS 위젯 익스텐션 링크 검증(회귀 테스트): `xcodebuild -project iosApp/iosApp.xcodeproj -target DdayWidgetExtensionExtension -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build` — `ARCHS=arm64`를 빼면 Gradle이 `ios_x64` 요청을 거부해서 링크 단계까지 못 간다.
 
 ## 문서
 
