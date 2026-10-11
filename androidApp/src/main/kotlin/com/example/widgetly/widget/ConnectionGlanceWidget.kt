@@ -162,13 +162,13 @@ internal fun ConnectionWidgetContent(
         contentAlignment = Alignment.Center,
     ) {
         when {
-            connectionId == null -> Text("설정 필요", style = textStyle)
+            connectionId == null -> EmptyStateWithMascot("설정 필요", textStyle)
             connectionState === ConnectionLoading -> {}
-            connectionState == null -> Text("연결 끊김", style = textStyle)
+            connectionState == null -> EmptyStateWithMascot("연결 끊김", textStyle)
             else -> {
                 val connection = connectionState as Connection
                 if (connection.status == "disconnected") {
-                    Text("연결 끊김", style = textStyle)
+                    EmptyStateWithMascot("연결 끊김", textStyle)
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(

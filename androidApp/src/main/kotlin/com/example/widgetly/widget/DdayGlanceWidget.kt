@@ -10,6 +10,8 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
@@ -18,12 +20,15 @@ import androidx.glance.color.ColorProvider
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
+import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import com.example.widgetly.R
 import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.dday.DdayEntry
 import com.example.widgetly.dday.calculateDday
@@ -93,14 +98,14 @@ private fun DdayWidgetContent() {
         contentAlignment = Alignment.Center,
     ) {
         when {
-            entryId == null -> Text(
+            entryId == null -> EmptyStateWithMascot(
                 "설정 필요",
-                style = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
+                TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
             )
             entryState === Loading -> {}
-            entryState == null -> Text(
+            entryState == null -> EmptyStateWithMascot(
                 "삭제됨",
-                style = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
+                TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
             )
             else -> {
                 val entry = entryState as DdayEntry
@@ -112,5 +117,23 @@ private fun DdayWidgetContent() {
                 )
             }
         }
+    }
+}
+
+/**
+ * The quokka mascot above a message, for a widget's empty states only - never
+ * shown once real data (D-day label, streak) is on screen, so it doesn't
+ * compete with the thing the widget actually exists to show. Shared by
+ * DdayGlanceWidget and ConnectionGlanceWidget (same package).
+ */
+@Composable
+internal fun EmptyStateWithMascot(message: String, style: TextStyle) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Image(
+            provider = ImageProvider(R.drawable.quokka),
+            contentDescription = null,
+            modifier = GlanceModifier.size(48.dp),
+        )
+        Text(message, style = style)
     }
 }
