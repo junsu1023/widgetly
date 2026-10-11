@@ -21,6 +21,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.glance.text.FontFamily
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -80,21 +81,27 @@ private fun DdayWidgetContent() {
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(day = backgroundColor, night = backgroundColor))
-            .cornerRadius(16.dp)
+            .cornerRadius(20.dp)
             .padding(12.dp),
         contentAlignment = Alignment.Center,
     ) {
         when {
-            entryId == null -> Text("설정 필요", style = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)))
+            entryId == null -> Text(
+                "설정 필요",
+                style = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor), fontFamily = FontFamily("dongle_regular")),
+            )
             entryState === Loading -> {}
-            entryState == null -> Text("삭제됨", style = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)))
+            entryState == null -> Text(
+                "삭제됨",
+                style = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor), fontFamily = FontFamily("dongle_regular")),
+            )
             else -> {
                 val entry = entryState as DdayEntry
                 val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
                 val result = calculateDday(entry, today)
                 Text(
                     "${entry.title}\n${result.label}",
-                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
+                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorProvider(day = foregroundColor, night = foregroundColor), fontFamily = FontFamily("do_hyeon_regular")),
                 )
             }
         }

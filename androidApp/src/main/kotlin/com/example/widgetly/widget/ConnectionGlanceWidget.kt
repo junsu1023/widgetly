@@ -30,6 +30,7 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.glance.text.FontFamily
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -145,13 +146,17 @@ internal fun ConnectionWidgetContent(
     val theme = ThemeCatalog.find(themeId ?: ThemeCatalog.DEFAULT_THEME_ID)
     val backgroundColor = Color(theme.backgroundColorArgb)
     val foregroundColor = Color(theme.foregroundColorArgb)
-    val textStyle = TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor))
+    val textStyle = TextStyle(
+        fontSize = 14.sp,
+        color = ColorProvider(day = foregroundColor, night = foregroundColor),
+        fontFamily = FontFamily("dongle_regular"),
+    )
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(day = backgroundColor, night = backgroundColor))
-            .cornerRadius(16.dp)
+            .cornerRadius(20.dp)
             .padding(12.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -171,6 +176,7 @@ internal fun ConnectionWidgetContent(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ColorProvider(day = foregroundColor, night = foregroundColor),
+                                fontFamily = FontFamily("do_hyeon_regular"),
                             ),
                         )
                         // 상대의 최신 신호 (the plan's other half of its own goal, next
