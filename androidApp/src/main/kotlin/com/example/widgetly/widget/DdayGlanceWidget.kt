@@ -13,6 +13,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -54,29 +55,30 @@ private object Loading
 
 class DdayGlanceWidget : GlanceAppWidget() {
     override val stateDefinition = PreferencesGlanceStateDefinition
+    override val sizeMode = SizeMode.Responsive(MASCOT_RESPONSIVE_SIZES)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
-            DdayWidgetContent()
+            // currentState() reactively observes the session's Glance state. Resolving the
+            // entry inside provideGlance() instead (one-shot, before provideContent) would
+            // capture a stale value forever: update()/updateAll() recompose this content but
+            // never re-invoke provideGlance() while a session is already running.
+            val entryId = currentState(DDAY_ENTRY_ID_KEY)
+            val refreshToken = currentState(DDAY_REFRESH_TOKEN_KEY)
+            val entryState by produceState<Any?>(initialValue = Loading, key1 = entryId, key2 = refreshToken) {
+                value = entryId?.let { selectedId ->
+                    WidgetlyApplication.ddayRepository.list().find { it.id == selectedId }
+                }
+            }
+            val themeId = currentState(THEME_ID_KEY)
+            DdayWidgetContent(entryId, entryState, themeId)
         }
     }
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun DdayWidgetContent() {
-    // currentState() reactively observes the session's Glance state. Resolving the
-    // entry inside provideGlance() instead (one-shot, before provideContent) would
-    // capture a stale value forever: update()/updateAll() recompose this content but
-    // never re-invoke provideGlance() while a session is already running.
-    val entryId = currentState(DDAY_ENTRY_ID_KEY)
-    val refreshToken = currentState(DDAY_REFRESH_TOKEN_KEY)
-    val entryState by produceState<Any?>(initialValue = Loading, key1 = entryId, key2 = refreshToken) {
-        value = entryId?.let { selectedId ->
-            WidgetlyApplication.ddayRepository.list().find { it.id == selectedId }
-        }
-    }
-    val themeId = currentState(THEME_ID_KEY)
+internal fun DdayWidgetContent(entryId: String?, entryState: Any?, themeId: String?) {
     val theme = ThemeCatalog.find(themeId ?: ThemeCatalog.DEFAULT_THEME_ID)
     val backgroundColor = androidx.compose.ui.graphics.Color(theme.backgroundColorArgb)
     val foregroundColor = androidx.compose.ui.graphics.Color(theme.foregroundColorArgb)
@@ -115,6 +117,7 @@ private fun DdayWidgetContent() {
                     "${entry.title}\n${result.label}",
                     style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
                 )
+                MascotCornerDecoration()
             }
         }
     }

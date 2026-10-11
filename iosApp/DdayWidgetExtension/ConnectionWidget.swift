@@ -374,27 +374,30 @@ struct ConnectionWidgetEntryView: View {
         Group {
             if let connectionId = entry.connectionId {
                 if let connection = entry.connection, connection.status != "disconnected" {
-                    VStack(spacing: 4) {
-                        Text("스트릭 \(connection.streak)")
-                            .font(.custom("DoHyeon-Regular", size: 18))
-                        partnerSignal(of: connection)
-                        if entry.rateLimited {
-                            // Retrying immediately would just hit the backend's
-                            // rate limit again, so no button while this holds.
-                            Text("곧 다시 보내보세요")
-                                .font(.custom("Dongle-Regular", size: 15))
-                        } else {
-                            // A failed send (network error, backend rejection,
-                            // malformed response) is worth retrying right away —
-                            // unlike rateLimited, keep the button live and just
-                            // add a caption so the failure isn't silent.
-                            if entry.sendFailed {
-                                Text("전송 실패, 다시 시도해주세요")
+                    ZStack(alignment: .bottomTrailing) {
+                        cornerMascot()
+                        VStack(spacing: 4) {
+                            Text("스트릭 \(connection.streak)")
+                                .font(.custom("DoHyeon-Regular", size: 18))
+                            partnerSignal(of: connection)
+                            if entry.rateLimited {
+                                // Retrying immediately would just hit the backend's
+                                // rate limit again, so no button while this holds.
+                                Text("곧 다시 보내보세요")
                                     .font(.custom("Dongle-Regular", size: 15))
-                            }
-                            Button(intent: SendSignalIntent(connectionId: connectionId)) {
-                                Text("신호 보내기")
-                                    .font(.custom("DoHyeon-Regular", size: 14))
+                            } else {
+                                // A failed send (network error, backend rejection,
+                                // malformed response) is worth retrying right away —
+                                // unlike rateLimited, keep the button live and just
+                                // add a caption so the failure isn't silent.
+                                if entry.sendFailed {
+                                    Text("전송 실패, 다시 시도해주세요")
+                                        .font(.custom("Dongle-Regular", size: 15))
+                                }
+                                Button(intent: SendSignalIntent(connectionId: connectionId)) {
+                                    Text("신호 보내기")
+                                        .font(.custom("DoHyeon-Regular", size: 14))
+                                }
                             }
                         }
                     }
@@ -424,6 +427,20 @@ struct ConnectionWidgetEntryView: View {
             Text(message)
                 .font(.custom("Dongle-Regular", size: 16))
         }
+    }
+
+    /// A single faint quokka pinned to the bottom-trailing corner behind the
+    /// streak content — unlike Android's Glance widgets, SwiftUI's .opacity()
+    /// works at runtime, so no separate pre-faded asset is needed here. Fixed
+    /// at one instance regardless of widget family: WidgetKit's families
+    /// (small/medium/large) aren't a continuous resize the way Android's
+    /// Glance widgets are, so there's no size signal to scale a count from.
+    @ViewBuilder
+    private func cornerMascot() -> some View {
+        Image("Quokka")
+            .resizable()
+            .frame(width: 24, height: 24)
+            .opacity(0.3)
     }
 
     /// 상대의 최신 신호. Only rendered when this device's own uid is known AND the

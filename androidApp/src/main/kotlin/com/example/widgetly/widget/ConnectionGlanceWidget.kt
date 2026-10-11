@@ -15,6 +15,7 @@ import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
@@ -83,6 +84,7 @@ private object ConnectionLoading
 
 class ConnectionGlanceWidget : GlanceAppWidget() {
     override val stateDefinition = PreferencesGlanceStateDefinition
+    override val sizeMode = SizeMode.Responsive(MASCOT_RESPONSIVE_SIZES)
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
@@ -218,6 +220,7 @@ internal fun ConnectionWidgetContent(
                             }
                         }
                     }
+                    MascotCornerDecoration()
                 }
             }
         }

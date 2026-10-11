@@ -115,9 +115,19 @@ struct DdayWidgetExtensionEntryView: View {
                     .foregroundStyle(Color(argb: entry.foregroundColorArgb))
             }
         } else {
-            Text(entry.label)
-                .font(.custom("DoHyeon-Regular", size: 20))
-                .foregroundStyle(Color(argb: entry.foregroundColorArgb))
+            ZStack(alignment: .bottomTrailing) {
+                // Fixed at one instance - WidgetKit families aren't a
+                // continuous resize the way Android's Glance widgets are, so
+                // there's no size signal to scale a count from (see
+                // ConnectionWidget.swift's cornerMascot(), same reasoning).
+                Image("Quokka")
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                    .opacity(0.3)
+                Text(entry.label)
+                    .font(.custom("DoHyeon-Regular", size: 20))
+                    .foregroundStyle(Color(argb: entry.foregroundColorArgb))
+            }
         }
     }
 }

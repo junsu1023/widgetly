@@ -1,6 +1,7 @@
 package com.example.widgetly.widget
 
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasText
 import com.example.widgetly.connection.Connection
 import com.example.widgetly.connection.ConnectionType
@@ -27,7 +28,8 @@ private val sampleConnection = Connection(
  */
 class ConnectionGlanceWidgetTest {
     @Test
-    fun showsStreakWhenConnectionIsActive() = runGlanceAppWidgetUnitTest {
+    fun showsStreakAndCornerMascotWhenConnectionIsActive() = runGlanceAppWidgetUnitTest {
+        setAppWidgetSize(MASCOT_SIZE_SMALL)
         provideComposable {
             ConnectionWidgetContent(
                 connectionId = sampleConnection.id,
@@ -38,10 +40,12 @@ class ConnectionGlanceWidgetTest {
             )
         }
         onNode(hasText("연속 5일")).assertExists()
+        onAllNodes(hasContentDescriptionEqualTo("quokka_corner")).assertCountEquals(1)
     }
 
     @Test
-    fun showsDisconnectedWhenConnectionStatusIsDisconnected() = runGlanceAppWidgetUnitTest {
+    fun showsDisconnectedWithoutCornerMascotWhenConnectionStatusIsDisconnected() = runGlanceAppWidgetUnitTest {
+        setAppWidgetSize(MASCOT_SIZE_SMALL)
         provideComposable {
             ConnectionWidgetContent(
                 connectionId = sampleConnection.id,
@@ -52,6 +56,7 @@ class ConnectionGlanceWidgetTest {
             )
         }
         onNode(hasText("연결 끊김")).assertExists()
+        onAllNodes(hasContentDescriptionEqualTo("quokka_corner")).assertCountEquals(0)
     }
 
     @Test
