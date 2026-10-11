@@ -31,6 +31,8 @@
 
 | 16 | 비주얼 디자인 시스템 — Android 위젯(Glance)에 Do Hyeon/Dongle 커스텀 TTF 폰트 적용(`FontFamily("do_hyeon_regular")`/`FontFamily("dongle_regular")`, `res/font/`에 번들) + 모서리 16dp→20dp | **확인 필요 — 자동화 불가.** `androidApp:assembleDebug`/`connectedAndroidTest`(17개, 에뮬레이터 Galaxy_S10e) 전부 그린이지만, 이 테스트들은 색상/텍스트 내용만 검증하고 실제 글꼴 렌더링은 검증하지 않음. Jetpack Glance 1.1.1의 `androidx.glance.text.FontFamily`는 문자열 하나만 받는 생성자뿐이고 리소스 기반 로딩 API가 없어서(디컴파일로 확인), 번들된 TTF가 이 문자열 방식으로 실제로 로드되는지는 공식 문서로 확정할 수 없음. 홈 화면에 위젯을 직접 배치해서 보는 수밖에 없는데, 이 세션에는 홈 화면에 위젯을 추가하는 터치 자동화 수단이 없어(adb에 그런 공식 커맨드가 없음) 사용자가 실기기/에뮬레이터에서 직접 확인해야 함. 만약 시스템 기본 폰트로 보인다면 Glance의 제약이니 `fontFamily` 지정은 유지하고 이 행만 갱신 | 해당 없음 — iOS는 SwiftUI 네이티브 폰트 등록(Task 4)이라 같은 종류의 불확실성이 없음, 별도로 추적(Task 4의 iOS 검증 참고) | `DdayGlanceWidget.kt`, `ConnectionGlanceWidget.kt` |
 
+| 17 | 비주얼 디자인 시스템 — iOS 위젯 익스텐션(SwiftUI)에 Do Hyeon/Dongle 커스텀 TTF 폰트 적용(`Info.plist`의 `UIAppFonts`에 `DoHyeon-Regular.ttf`/`Dongle-Regular.ttf` 등록, `.font(.custom("DoHyeon-Regular"/"Dongle-Regular", size:))`) | 해당 없음 — Android Glance는 별도 메커니즘(행 16 참고) | **확인 필요 — 자동화 불가.** C3 회귀 테스트(`xcodebuild ... DdayWidgetExtensionExtension ... clean build`)는 성공하고 `nm -u`로 미정의 Firebase 심볼도 없음을 확인했지만, 이건 "링크가 깨지지 않았다"는 것만 증명하고 폰트가 실제로 렌더링되는지는 증명하지 않음. `simctl`에는 adb 같은 터치 합성 CLI가 없어서(이미 테마 시스템 플랜 리뷰에서도 같은 제약이 기록됨) 위젯을 홈 화면에 배치해서 보는 과정 자체를 이 세션에서 자동화할 수 없음 — 사용자가 시뮬레이터/실기기에서 직접 확인 필요 | `iosApp/DdayWidgetExtension/DdayWidgetExtension.swift`, `ConnectionWidget.swift`, `Info.plist` |
+
 ## 사용법
 
 1. Android에서 새 버그를 고치면, 이 표에 행을 추가하고 iOS 상태를 `확인 필요`로 둡니다.
