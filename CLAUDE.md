@@ -42,6 +42,8 @@
 - iOS 앱: `/iosApp` 디렉토리를 Xcode로 열어서 실행
 - Android 테스트: `./gradlew :shared-core:testAndroidHostTest :shared:testAndroidHostTest`
 - iOS 테스트: `./gradlew :shared-core:iosSimulatorArm64Test` (`:shared:iosSimulatorArm64Test`는 Xcode SPM으로 `firebase-ios-sdk`를 추가하는 수동 작업이 끝날 때까지 `ld: framework 'FirebaseCore' not found`로 실패 — `docs/widget-development.md` 참고)
+- iOS 위젯 익스텐션 유닛 테스트(실제 실행됨): `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme DdayWidgetExtensionTests -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' ARCHS=arm64 ONLY_ACTIVE_ARCH=NO` — `Shared.framework`를 링크하지 않는 타겟이라 Firebase SPM 수동 작업과 무관하게 돌아간다.
+- Functions 테스트: `npx firebase-tools emulators:exec --only firestore --project widgetly-53e09 "npm --prefix functions test"` — 모든 테스트(규칙 테스트 포함)가 Firestore 에뮬레이터를 필요로 한다. `firebase` CLI는 전역 설치돼 있지 않으니 `npx firebase-tools`로 호출하고, `functions/`에서 `npm ci`를 먼저 돌려야 한다.
 - iOS 위젯 익스텐션 링크 검증(회귀 테스트): `xcodebuild -project iosApp/iosApp.xcodeproj -target DdayWidgetExtensionExtension -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build` — `ARCHS=arm64`를 빼면 Gradle이 `ios_x64` 요청을 거부해서 링크 단계까지 못 간다.
 
 ## 문서

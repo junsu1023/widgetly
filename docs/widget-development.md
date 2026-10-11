@@ -43,6 +43,17 @@ class SendSignalAction : ActionCallback {
 - **iOS 17~25**: push 도착 시 Notification Service Extension이 App Group 공유 컨테이너에 스냅샷을 쓰고 `WidgetCenter.shared.reloadTimelines(ofKind:)` 호출. **실기기 검증 필수** — 공식적으로 보장된 동작이 아니고, 알림 권한을 끈 사용자는 이 경로가 아예 없다.
 - **공통 폴백 (모든 iOS 버전)**: 위젯의 `TimelineProvider`가 시스템 스케줄로 갱신될 때, 캐시된 스냅샷만 다시 그리는 게 아니라 직접 서버에서 최신 상태를 조회한다. NSE/WidgetKit push가 실패하거나 알림이 꺼져 있어도 이 경로로는 결국 반영된다. 단, Firestore 읽기 할당량 때문에 매 갱신마다 조회하지 않고 "푸시 수신 직후" 또는 "마지막 조회 후 30분 경과" 조건에서만 조회한다 (`docs/firebase-pairing.md`의 읽기 할당량 계산 참고).
 
+### 푸시 payload 모양 — 플랫폼별 요구가 정반대다
+
+`functions/src/lib/push.ts`의 `sendPushToPartner`는 **최상위 `notification` 필드를 절대 넣지 않는다.** 두 플랫폼의 요구가 서로 반대라서, 하나의 `send()`로 둘을 다 만족시키려면 `apns` 블록(iOS에만 적용)으로 분기해야 한다:
+
+- **Android**: `notification` + `data`를 같이 보내면 앱이 백그라운드일 때 OS가 메시지를 시스템 트레이로 처리하고 `FirebaseMessagingService.onMessageReceived`는 **호출이 보장되지 않는다**. 순수 data message만 포그라운드/백그라운드 상관없이 항상 `onMessageReceived`에 도달한다 → 위젯 갱신 로직이 data-only를 요구한다.
+- **iOS**: Notification Service Extension은 **표시되는** 알림에만, 그것도 `aps`에 `mutable-content: 1`이 있을 때만 실행된다. data-only 푸시는 iOS에서 silent push가 되어 `didReceive`가 영구히 안 뜬다 → `apns.payload.aps`에 `alert` + `mutable-content: 1`을 넣어 iOS 쪽만 표시형으로 보낸다.
+
+### 폴백 조회가 호출하는 엔드포인트
+
+위젯 익스텐션은 Firebase SDK를 링크하지 않으므로(메모리 제약) Firestore를 직접 읽을 수 없다. 대신 읽기 전용 콜러블 `getConnection`(`functions/src/getConnection.ts`)을 `CallableHttpClient`로 호출한다 — `sendSignal`과 같은 콜러블 wire protocol, 같은 App Group 캐시 토큰(`firebase_id_token`)을 쓴다. 메인 앱이 매 포그라운드 진입마다 그 토큰과 `firebase_uid`를 App Group에 써주는 것이 전제다(`iosApp/iosApp/iOSApp.swift`).
+
 ## 테스트
 
 - Android: Glance 액션 콜백이 WorkManager에 올바르게 enqueue하는지 instrumented test로 확인
