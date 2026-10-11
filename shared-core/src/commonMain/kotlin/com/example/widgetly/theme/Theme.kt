@@ -8,26 +8,32 @@ data class Theme(
 )
 
 object ThemeCatalog {
-    const val DEFAULT_THEME_ID: String = "lavender"
+    const val DEFAULT_THEME_ID: String = "peach"
 
     val all: List<Theme> = listOf(
         Theme(
             id = DEFAULT_THEME_ID,
-            name = "라벤더",
-            backgroundColorArgb = 0xFFF5F0FFL,
-            foregroundColorArgb = 0xFF3B2A5AL,
-        ),
-        Theme(
-            id = "mint",
-            name = "민트",
-            backgroundColorArgb = 0xFFE8FFF5L,
-            foregroundColorArgb = 0xFF0F5132L,
-        ),
-        Theme(
-            id = "sunset",
-            name = "선셋",
+            name = "피치",
             backgroundColorArgb = 0xFFFFF0E5L,
             foregroundColorArgb = 0xFF7A3B12L,
+        ),
+        Theme(
+            id = "lemon",
+            name = "레몬",
+            backgroundColorArgb = 0xFFFFFBE0L,
+            foregroundColorArgb = 0xFF6B5800L,
+        ),
+        Theme(
+            id = "skyblue",
+            name = "스카이블루",
+            backgroundColorArgb = 0xFFE6F4FFL,
+            foregroundColorArgb = 0xFF1B4B73L,
+        ),
+        Theme(
+            id = "cream",
+            name = "크림",
+            backgroundColorArgb = 0xFFFFF8EEL,
+            foregroundColorArgb = 0xFF5C4A33L,
         ),
     )
 
