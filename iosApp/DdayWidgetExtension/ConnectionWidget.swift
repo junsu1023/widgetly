@@ -399,8 +399,7 @@ struct ConnectionWidgetEntryView: View {
                         }
                     }
                 } else if entry.hasEverLoaded {
-                    Text("연결 끊김")
-                        .font(.custom("Dongle-Regular", size: 16))
+                    emptyState("연결 끊김")
                 } else {
                     // Configured, but no push has arrived and no fetch has
                     // happened yet — not the same thing as a dead connection.
@@ -408,9 +407,22 @@ struct ConnectionWidgetEntryView: View {
                         .font(.custom("Dongle-Regular", size: 16))
                 }
             } else {
-                Text("설정 필요")
-                    .font(.custom("Dongle-Regular", size: 16))
+                emptyState("설정 필요")
             }
+        }
+    }
+
+    /// The mascot above a message, for the widget's dead-end states only —
+    /// never shown for "불러오는 중" (still waiting to learn anything, not
+    /// necessarily bad news) or once real connection data is on screen.
+    @ViewBuilder
+    private func emptyState(_ message: String) -> some View {
+        VStack(spacing: 4) {
+            Image("Quokka")
+                .resizable()
+                .frame(width: 48, height: 48)
+            Text(message)
+                .font(.custom("Dongle-Regular", size: 16))
         }
     }
 

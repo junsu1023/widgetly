@@ -96,13 +96,29 @@ struct Provider: AppIntentTimelineProvider {
     }
 }
 
+/// Shown instead of a calculated D-day label when there's nothing to
+/// calculate - the widget isn't pointed at an entry yet, or the entry it was
+/// pointed at no longer exists. See mapToWidgetState/makeEntry.
+private let emptyStateLabels: Set<String> = ["설정 필요", "삭제됨"]
+
 struct DdayWidgetExtensionEntryView: View {
     var entry: Provider.Entry
 
     var body: some View {
-        Text(entry.label)
-            .font(.custom("DoHyeon-Regular", size: 20))
-            .foregroundStyle(Color(argb: entry.foregroundColorArgb))
+        if emptyStateLabels.contains(entry.label) {
+            VStack(spacing: 4) {
+                Image("Quokka")
+                    .resizable()
+                    .frame(width: 48, height: 48)
+                Text(entry.label)
+                    .font(.custom("DoHyeon-Regular", size: 20))
+                    .foregroundStyle(Color(argb: entry.foregroundColorArgb))
+            }
+        } else {
+            Text(entry.label)
+                .font(.custom("DoHyeon-Regular", size: 20))
+                .foregroundStyle(Color(argb: entry.foregroundColorArgb))
+        }
     }
 }
 
