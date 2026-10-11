@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash-only wrapper: windowSplashScreenAnimatedIcon masks the icon to a
+     circle inscribed in its bounds, which clips the quokka's ears when the
+     bare @drawable/quokka (artwork fills the canvas edge to edge) is used
+     directly. Insetting 15% on each side keeps the whole character inside
+     the mask. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/quokka"
+    android:insetLeft="15%"
+    android:insetTop="15%"
+    android:insetRight="15%"
+    android:insetBottom="15%" />

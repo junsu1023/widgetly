@@ -128,11 +128,15 @@ private fun DdayWidgetContent() {
  */
 @Composable
 internal fun EmptyStateWithMascot(message: String, style: TextStyle) {
+    // 28.dp, not 48.dp: the widget's declared minHeight (40dp) plus the
+    // surrounding 12dp padding on each side leaves little room before the
+    // mascot + text overflow at the smallest size a user can resize the
+    // widget down to.
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Image(
             provider = ImageProvider(R.drawable.quokka),
             contentDescription = null,
-            modifier = GlanceModifier.size(48.dp),
+            modifier = GlanceModifier.size(28.dp),
         )
         Text(message, style = style)
     }
