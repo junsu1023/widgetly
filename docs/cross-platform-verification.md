@@ -33,6 +33,7 @@
 
 | 19 | 마스코트 캐릭터 — Android 위젯 빈 상태("설정 필요"/"삭제됨"/"연결 끊김")에 쿼카 이미지 표시(Glance `Image`/`ImageProvider`) | **확인됨(간접) — 계측 테스트 17/17 그린.** 폰트(행 16)와 달리 Glance의 `Image`/`ImageProvider`는 RemoteViews 표준 비트맵 렌더링 경로라 공식 지원 기능 — `ConnectionGlanceWidgetTest`의 기존 빈 상태 텍스트 어설션이 이미지 추가 후에도 전부 통과함을 확인. 다만 이건 "텍스트가 여전히 있다"만 증명하고 이미지가 실제로 보이는지는 홈 화면에 직접 배치해야 눈으로 확인 가능 — 터치 자동화 수단이 없어 이 세션에서는 불가 | 확인 필요 — iOS는 SwiftUI `Image("Quokka")`로 별도 구현(아래 행 20 참고) | `DdayGlanceWidget.kt`, `ConnectionGlanceWidget.kt` |
 | 20 | 마스코트 캐릭터 — iOS 위젯 익스텐션 빈 상태("설정 필요"/"삭제됨"/"연결 끊김")에 쿼카 이미지 표시(애셋 카탈로그 + `Image("Quokka")`) | 해당 없음 — Android는 별도 메커니즘(행 19) | **확인 필요 — 자동화 불가.** C3 회귀 테스트는 성공하고 애셋 카탈로그(`Assets.car`)가 정상 컴파일됨을 빌드 로그로 확인했지만, 실제 렌더링은 시뮬레이터/실기기 수동 확인 필요(행 17과 동일한 제약) | `iosApp/DdayWidgetExtension/ConnectionWidget.swift`, `DdayWidgetExtension.swift` |
+| 21 | 마스코트 캐릭터 — iOS 메인 앱 네이티브 런치 스크린(`UILaunchScreen` Info.plist 메커니즘)에 쿼카 이미지 표시 | **확인됨 (직접 확인, 2026-10-11)** — Android는 별도 메커니즘(`androidx.core.splashscreen`, 행 4)으로 구현했고, 에뮬레이터 콜드 스타트 스크린샷으로 쿼카 아이콘이 `#FFF4E8` 배경 위에 렌더링됨을 직접 확인함 | **이 행은 iOS 쪽 미검증 상태를 기록하는 행 — 빌드 자체가 안 돼서 확인 불가.** `iosApp/iosApp/Assets.xcassets/Quokka.imageset` 생성 + `project.pbxproj`의 `iosApp` 타겟 Debug/Release 설정 두 곳에 `INFOPLIST_KEY_UILaunchScreen_ImageName = Quokka;` 추가까지는 완료(JSON 유효성 확인, grep으로 2곳 모두 반영 확인). 하지만 iOS 메인 앱은 보류 중인 Firebase SPM 수동 작업 전까지 `xcodebuild`조차 안 되는 상태라 pbxproj 구조/문법만 확인했고, 런치 스크린이 실제로 쿼카와 함께 뜨는지는 그 작업이 끝난 뒤 사용자가 직접 확인해야 함 | `iosApp/iosApp.xcodeproj/project.pbxproj`, `iosApp/iosApp/Assets.xcassets/Quokka.imageset` |
 
 ## 사용법
 
