@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -17,8 +18,10 @@ import com.example.widgetly.widget.CONNECTION_REFRESH_TOKEN_KEY
 import com.example.widgetly.widget.ConnectionGlanceWidget
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -46,7 +49,18 @@ import kotlinx.coroutines.launch
  * server).
  */
 class WidgetlyFirebaseMessagingService : FirebaseMessagingService() {
-    private val scope = CoroutineScope(Dispatchers.Default)
+    // SupervisorJob + CoroutineExceptionHandler, not a bare CoroutineScope: the
+    // observeConnection(...).first() below hits the network, and an uncaught exception
+    // from a plain root scope reaches the default uncaught-exception handler and kills
+    // the whole process - a failed widget refresh must not crash the app. A logged,
+    // swallowed failure is the right outcome here; the widget's own periodic re-check
+    // (see the class doc's "공통 폴백" note) is what actually recovers the state.
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default +
+            CoroutineExceptionHandler { _, throwable ->
+                Log.e("WidgetlyFcm", "Push handling failed", throwable)
+            },
+    )
 
     override fun onMessageReceived(message: RemoteMessage) {
         val connectionId = message.data["connectionId"] ?: return

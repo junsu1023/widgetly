@@ -1,6 +1,7 @@
 package com.example.widgetly
 
 import android.app.Application
+import android.util.Log
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
@@ -20,8 +21,10 @@ import dev.gitlive.firebase.app
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.firestore.firestore
 import dev.gitlive.firebase.functions.functions
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class WidgetlyApplication : Application() {
@@ -48,7 +51,17 @@ class WidgetlyApplication : Application() {
         FirestoreConnectionRepository(Firebase.firestore(Firebase.app, "widgetly"))
     }
 
-    private val applicationScope = CoroutineScope(Dispatchers.Default)
+    // SupervisorJob + CoroutineExceptionHandler, not a bare CoroutineScope: without
+    // them an exception in any coroutine launched here (a Firebase call failing
+    // offline, a decode error, ...) reaches the default uncaught-exception handler and
+    // kills the whole process, and cancels every sibling coroutine on the way out.
+    // Background bootstrap work failing must not take the app down - log and move on.
+    private val applicationScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default +
+            CoroutineExceptionHandler { _, throwable ->
+                Log.e("WidgetlyApplication", "Background work failed", throwable)
+            },
+    )
 
     override fun onCreate() {
         super.onCreate()
