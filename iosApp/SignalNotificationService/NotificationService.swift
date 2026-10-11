@@ -29,6 +29,8 @@ private let pushArrivedKeyPrefix = "connection_push_arrived_"
 private struct ConnectionSnapshot: Codable {
     var status: String
     var streak: Int
+    var lastSignalPreset: String?
+    var lastSignalSenderUid: String?
 }
 
 /// iOS 17~25 "즉시 반영" path (docs/widget-development.md): when a push about
@@ -85,10 +87,9 @@ class NotificationService: UNNotificationServiceExtension {
         // throws before any push is sent), and a pairing-success push is by
         // definition a brand-new active connection. Merge that onto whatever
         // is already cached instead of overwriting wholesale — the payload
-        // never carries streak/memberUids/anniversaryDate (see
-        // ConnectionSnapshot's doc comment and push.ts's `data` argument), so
-        // there's nothing truer to put in those fields than what's already
-        // there.
+        // never carries streak (see ConnectionSnapshot's doc comment and
+        // push.ts's `data` argument), so there's nothing truer to put in that
+        // field than what's already there.
         let snapshotKey = connectionSnapshotKeyPrefix + connectionId
         var snapshot: ConnectionSnapshot
         if let existingJson = defaults.string(forKey: snapshotKey),
@@ -101,9 +102,21 @@ class NotificationService: UNNotificationServiceExtension {
             // what's actually knowable (status) rather than fabricate a
             // number. This is a known, short-lived placeholder: the next
             // ConnectionWidgetProvider.timeline(for:in:) call (triggered by
-            // reloadTimelines below) sees pushArrivedSinceLastFetch and
-            // attempts its own fallback fetch seam.
+            // reloadTimelines below) sees pushArrivedSinceLastFetch and does
+            // its own fallback fetch.
             snapshot = ConnectionSnapshot(status: "active", streak: 0)
+        }
+
+        // A signal push carries presetType/senderUid right alongside
+        // connectionId; a pairing-success push carries neither. They were being
+        // ignored, which left the widget with no way to show the partner's latest
+        // signal until the 30-minute fallback fetch came round. Only overwrite
+        // when actually present, so a pairing-success push doesn't wipe the last
+        // known signal.
+        if let presetType = request.content.userInfo["presetType"] as? String,
+           let senderUid = request.content.userInfo["senderUid"] as? String {
+            snapshot.lastSignalPreset = presetType
+            snapshot.lastSignalSenderUid = senderUid
         }
 
         if let snapshotData = try? JSONEncoder().encode(snapshot),
