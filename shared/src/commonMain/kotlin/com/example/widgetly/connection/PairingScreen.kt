@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.widgetly.theme.WidgetlyButtonShape
 
 @Composable
 fun PairingScreen(viewModel: PairingViewModel) {
@@ -33,10 +34,10 @@ fun PairingScreen(viewModel: PairingViewModel) {
             Text("커플/친구 연결")
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { viewModel.createCode(ConnectionType.COUPLE) }) {
+                Button(onClick = { viewModel.createCode(ConnectionType.COUPLE) }, shape = WidgetlyButtonShape) {
                     Text("커플 코드 생성")
                 }
-                Button(onClick = { viewModel.createCode(ConnectionType.FRIEND) }) {
+                Button(onClick = { viewModel.createCode(ConnectionType.FRIEND) }, shape = WidgetlyButtonShape) {
                     Text("친구 코드 생성")
                 }
             }
@@ -49,7 +50,7 @@ fun PairingScreen(viewModel: PairingViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Button(onClick = { viewModel.redeem(enteredCode) }) {
+            Button(onClick = { viewModel.redeem(enteredCode) }, shape = WidgetlyButtonShape) {
                 Text("연결하기")
             }
 

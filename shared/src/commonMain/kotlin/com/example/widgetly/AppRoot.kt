@@ -18,6 +18,7 @@ import com.example.widgetly.connection.PairingScreen
 import com.example.widgetly.connection.PairingViewModel
 import com.example.widgetly.dday.DdayListScreen
 import com.example.widgetly.dday.DdayViewModel
+import com.example.widgetly.theme.WidgetlyButtonShape
 import com.example.widgetly.theme.WidgetlyTheme
 
 private enum class AppScreen { DDAY_LIST, PAIRING }
@@ -38,6 +39,7 @@ fun AppRoot(ddayViewModel: DdayViewModel, pairingViewModel: PairingViewModel) {
                 onClick = {
                     currentScreen = if (currentScreen == AppScreen.DDAY_LIST) AppScreen.PAIRING else AppScreen.DDAY_LIST
                 },
+                shape = WidgetlyButtonShape,
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
             ) {
                 Text(if (currentScreen == AppScreen.DDAY_LIST) "커플/친구 연결하기" else "디데이 목록으로")

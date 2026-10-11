@@ -41,4 +41,35 @@ class ThemeCatalogTest {
         assertEquals(ThemeCatalog.DEFAULT_THEME_ID, ThemeCatalog.find("lavender").id)
         assertEquals(ThemeCatalog.DEFAULT_THEME_ID, ThemeCatalog.find("sunset").id)
     }
+
+    // Pins the exact hex values from the design spec - the earlier tests only check
+    // ids/uniqueness/fallback, so a mistyped color digit would ship silently without
+    // these.
+    @Test
+    fun `peach theme has the spec's exact colors`() {
+        val peach = ThemeCatalog.find("peach")
+        assertEquals(0xFFFFF0E5L, peach.backgroundColorArgb)
+        assertEquals(0xFF7A3B12L, peach.foregroundColorArgb)
+    }
+
+    @Test
+    fun `lemon theme has the spec's exact colors`() {
+        val lemon = ThemeCatalog.find("lemon")
+        assertEquals(0xFFFFFBE0L, lemon.backgroundColorArgb)
+        assertEquals(0xFF6B5800L, lemon.foregroundColorArgb)
+    }
+
+    @Test
+    fun `skyblue theme has the spec's exact colors`() {
+        val skyblue = ThemeCatalog.find("skyblue")
+        assertEquals(0xFFE6F4FFL, skyblue.backgroundColorArgb)
+        assertEquals(0xFF1B4B73L, skyblue.foregroundColorArgb)
+    }
+
+    @Test
+    fun `cream theme has the spec's exact colors`() {
+        val cream = ThemeCatalog.find("cream")
+        assertEquals(0xFFFFF8EEL, cream.backgroundColorArgb)
+        assertEquals(0xFF5C4A33L, cream.foregroundColorArgb)
+    }
 }

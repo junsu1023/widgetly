@@ -34,6 +34,7 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.lifecycle.lifecycleScope
 import com.example.widgetly.theme.Theme
 import com.example.widgetly.theme.ThemeCatalog
+import com.example.widgetly.theme.WidgetlyButtonShape
 import com.example.widgetly.theme.WidgetlyTheme
 import kotlinx.coroutines.launch
 
@@ -93,10 +94,11 @@ class ConnectionWidgetConfigurationActivity : ComponentActivity() {
                                     onClick = {
                                         if (connectionIdInput.isNotBlank()) confirmedConnectionId = connectionIdInput
                                     },
+                                    shape = WidgetlyButtonShape,
                                 ) {
                                     Text("다음")
                                 }
-                                Button(onClick = { finish() }) {
+                                Button(onClick = { finish() }, shape = WidgetlyButtonShape) {
                                     Text("취소")
                                 }
                             }

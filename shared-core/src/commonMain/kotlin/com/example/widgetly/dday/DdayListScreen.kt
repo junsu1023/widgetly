@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.widgetly.theme.WidgetlyButtonShape
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.random.Random
@@ -86,7 +87,9 @@ fun DdayListScreen(viewModel: DdayViewModel) {
                 Switch(checked = repeatYearly, onCheckedChange = { repeatYearly = it })
             }
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Button(onClick = {
+                Button(
+                    shape = WidgetlyButtonShape,
+                    onClick = {
                     val entry = buildDdayEntry(
                         id = Random.nextLong().toString(),
                         title = newTitle,

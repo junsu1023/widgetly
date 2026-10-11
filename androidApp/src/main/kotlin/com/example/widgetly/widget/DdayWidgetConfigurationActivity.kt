@@ -38,6 +38,7 @@ import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.dday.DdayEntry
 import com.example.widgetly.theme.Theme
 import com.example.widgetly.theme.ThemeCatalog
+import com.example.widgetly.theme.WidgetlyButtonShape
 import com.example.widgetly.theme.WidgetlyTheme
 import kotlinx.coroutines.launch
 
@@ -84,12 +85,14 @@ class DdayWidgetConfigurationActivity : ComponentActivity() {
                                 Text("아직 만든 디데이가 없어요.")
                                 Button(
                                     onClick = { startActivity(Intent(this@DdayWidgetConfigurationActivity, MainActivity::class.java)) },
+                                    shape = WidgetlyButtonShape,
                                     modifier = Modifier.padding(top = 16.dp),
                                 ) {
                                     Text("앱에서 디데이 만들기")
                                 }
                                 Button(
                                     onClick = { finish() },
+                                    shape = WidgetlyButtonShape,
                                     modifier = Modifier.padding(top = 8.dp),
                                 ) {
                                     Text("취소")

@@ -30,7 +30,6 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.state.PreferencesGlanceStateDefinition
-import androidx.glance.text.FontFamily
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -146,10 +145,12 @@ internal fun ConnectionWidgetContent(
     val theme = ThemeCatalog.find(themeId ?: ThemeCatalog.DEFAULT_THEME_ID)
     val backgroundColor = Color(theme.backgroundColorArgb)
     val foregroundColor = Color(theme.foregroundColorArgb)
+    // No custom fontFamily (see DdayGlanceWidget.kt's comment at its Box modifier):
+    // Glance's TextStyle.fontFamily can only name a system font family - a bundled
+    // TTF can never load through it, confirmed by decompiling glance-appwidget 1.1.1.
     val textStyle = TextStyle(
         fontSize = 14.sp,
         color = ColorProvider(day = foregroundColor, night = foregroundColor),
-        fontFamily = FontFamily("dongle_regular"),
     )
 
     Box(
@@ -176,7 +177,6 @@ internal fun ConnectionWidgetContent(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ColorProvider(day = foregroundColor, night = foregroundColor),
-                                fontFamily = FontFamily("do_hyeon_regular"),
                             ),
                         )
                         // 상대의 최신 신호 (the plan's other half of its own goal, next
