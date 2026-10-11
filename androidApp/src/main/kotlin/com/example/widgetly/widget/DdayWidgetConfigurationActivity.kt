@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -39,6 +38,7 @@ import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.dday.DdayEntry
 import com.example.widgetly.theme.Theme
 import com.example.widgetly.theme.ThemeCatalog
+import com.example.widgetly.theme.WidgetlyTheme
 import kotlinx.coroutines.launch
 
 class DdayWidgetConfigurationActivity : ComponentActivity() {
@@ -64,7 +64,7 @@ class DdayWidgetConfigurationActivity : ComponentActivity() {
             LaunchedEffect(Unit) {
                 entries = WidgetlyApplication.ddayRepository.list()
             }
-            MaterialTheme {
+            WidgetlyTheme {
                 Scaffold(
                     topBar = {
                         TopAppBar(

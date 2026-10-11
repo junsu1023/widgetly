@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,6 +34,7 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.lifecycle.lifecycleScope
 import com.example.widgetly.theme.Theme
 import com.example.widgetly.theme.ThemeCatalog
+import com.example.widgetly.theme.WidgetlyTheme
 import kotlinx.coroutines.launch
 
 /**
@@ -66,7 +66,7 @@ class ConnectionWidgetConfigurationActivity : ComponentActivity() {
         setContent {
             var connectionIdInput by remember { mutableStateOf("") }
             var confirmedConnectionId by remember { mutableStateOf<String?>(null) }
-            MaterialTheme {
+            WidgetlyTheme {
                 Scaffold(
                     topBar = {
                         TopAppBar(
