@@ -52,6 +52,11 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebase-kotlin-sdk" }
 firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebase-kotlin-sdk" }
 firebase-functions = { module = "dev.gitlive:firebase-functions", version.ref = "firebase-kotlin-sdk" }
+# Test-only. Transitively present at runtime via firebase-firestore/-functions, but
+# not on the compile classpath - and it is where GitLive's public `decode(strategy,
+# value)` entry point lives, the one `data<T>()` routes into. Declaring it lets
+# WireShapeTest exercise the real decoder with no live Firebase project.
+firebase-common-internal = { module = "dev.gitlive:firebase-common-internal", version.ref = "firebase-kotlin-sdk" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 # No "-ktx" suffix: the firebase-bom used here no longer ships separate -ktx
 # artifacts - Kotlin extensions were merged into the base modules.

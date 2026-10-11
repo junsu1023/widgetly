@@ -1,5 +1,6 @@
 package com.example.widgetly.connection
 
+import dev.gitlive.firebase.internal.decode
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,6 +37,26 @@ class WireShapeTest {
         assertEquals(
             SendSignalResponse(rateLimited = true),
             json.decodeFromString<SendSignalResponse>("""{"rateLimited":true}"""),
+        )
+    }
+
+    @Test
+    fun `callable responses decode through GitLive's own decoder`() {
+        // Not Json, but the very decoder `HttpsCallableResult.data<T>()` routes into -
+        // GitLive exposes it publicly, so C1's actual break (no serializer for `Any`)
+        // is reachable without a live Firebase project. The input is the native-shaped
+        // map the SDK hands the decoder.
+        assertEquals(
+            CreatePairingCodeResponse("123456"),
+            decode(CreatePairingCodeResponse.serializer(), mapOf("code" to "123456")),
+        )
+        assertEquals(
+            RedeemPairingCodeResponse("conn-1"),
+            decode(RedeemPairingCodeResponse.serializer(), mapOf("connectionId" to "conn-1")),
+        )
+        assertEquals(
+            SendSignalResponse(rateLimited = true),
+            decode(SendSignalResponse.serializer(), mapOf("rateLimited" to true)),
         )
     }
 

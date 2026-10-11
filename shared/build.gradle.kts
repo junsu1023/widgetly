@@ -85,6 +85,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.firebase.common.internal)
         }
         getByName("androidHostTest") {
             dependencies {
