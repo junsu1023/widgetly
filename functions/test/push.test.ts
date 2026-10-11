@@ -38,6 +38,29 @@ describe("sendPushToPartner", () => {
     expect(sentMessage.apns.headers["apns-collapse-id"]).toBe(connectionId);
   });
 
+  it("sends a data-only message on Android and a mutable alert on APNs", async () => {
+    const send = vi.fn().mockResolvedValue("ok");
+    const fakeMessaging = { send } as unknown as Messaging;
+    await upsertToken(firestore, partnerUid, "tok-1", "android");
+
+    await sendPushToPartner(
+      fakeMessaging,
+      firestore,
+      partnerUid,
+      connectionId,
+      { title: "t", body: "b" },
+      { connectionId }
+    );
+
+    const sentMessage = send.mock.calls[0][0];
+    // A top-level `notification` makes the OS tray-deliver the message while the
+    // app is backgrounded, and onMessageReceived then may never run.
+    expect(sentMessage.notification).toBeUndefined();
+    // ...but the iOS NSE only runs for a displayable, mutable notification.
+    expect(sentMessage.apns.payload.aps["mutable-content"]).toBe(1);
+    expect(sentMessage.apns.payload.aps.alert).toEqual({ title: "t", body: "b" });
+  });
+
   it("removes a token that fails with a not-registered error and still tries the remaining tokens", async () => {
     const send = vi
       .fn()

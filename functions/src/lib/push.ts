@@ -19,10 +19,29 @@ export async function sendPushToPartner(
     try {
       await messaging.send({
         token,
-        notification: { title: payload.title, body: payload.body },
+        // NO top-level `notification`: a combined notification+data message is
+        // handed to the system tray by the OS while the app is backgrounded, and
+        // FirebaseMessagingService.onMessageReceived is then not guaranteed to run
+        // at all - which silently killed the whole Android widget-refresh path
+        // (WidgetlyFirebaseMessagingService). Only a true data-only message always
+        // reaches onMessageReceived. Spec 4.3's Android path is exactly that: data
+        // message -> cache refresh -> Glance redraw, no visible notification.
         data,
         android: { collapseKey: connectionId },
-        apns: { headers: { "apns-collapse-id": connectionId } },
+        apns: {
+          headers: { "apns-collapse-id": connectionId },
+          payload: {
+            aps: {
+              // iOS needs the opposite of Android: a UNNotificationServiceExtension
+              // only runs for a *displayable* notification carrying
+              // `mutable-content: 1`. A data-only push is a silent push there and
+              // NotificationService.didReceive would never fire. The apns block
+              // overrides for iOS only, so Android stays data-only above.
+              alert: { title: payload.title, body: payload.body },
+              "mutable-content": 1,
+            },
+          },
+        },
       });
     } catch (error) {
       if ((error as { code?: string }).code === "messaging/registration-token-not-registered") {
