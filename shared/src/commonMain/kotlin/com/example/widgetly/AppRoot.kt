@@ -18,6 +18,7 @@ import com.example.widgetly.connection.PairingScreen
 import com.example.widgetly.connection.PairingViewModel
 import com.example.widgetly.dday.DdayListScreen
 import com.example.widgetly.dday.DdayViewModel
+import com.example.widgetly.theme.WidgetlyTheme
 
 private enum class AppScreen { DDAY_LIST, PAIRING }
 
@@ -31,19 +32,21 @@ private enum class AppScreen { DDAY_LIST, PAIRING }
 fun AppRoot(ddayViewModel: DdayViewModel, pairingViewModel: PairingViewModel) {
     var currentScreen by remember { mutableStateOf(AppScreen.DDAY_LIST) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Button(
-            onClick = {
-                currentScreen = if (currentScreen == AppScreen.DDAY_LIST) AppScreen.PAIRING else AppScreen.DDAY_LIST
-            },
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-        ) {
-            Text(if (currentScreen == AppScreen.DDAY_LIST) "커플/친구 연결하기" else "디데이 목록으로")
-        }
-        Box(modifier = Modifier.weight(1f)) {
-            when (currentScreen) {
-                AppScreen.DDAY_LIST -> DdayListScreen(ddayViewModel)
-                AppScreen.PAIRING -> PairingScreen(pairingViewModel)
+    WidgetlyTheme {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Button(
+                onClick = {
+                    currentScreen = if (currentScreen == AppScreen.DDAY_LIST) AppScreen.PAIRING else AppScreen.DDAY_LIST
+                },
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+            ) {
+                Text(if (currentScreen == AppScreen.DDAY_LIST) "커플/친구 연결하기" else "디데이 목록으로")
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                when (currentScreen) {
+                    AppScreen.DDAY_LIST -> DdayListScreen(ddayViewModel)
+                    AppScreen.PAIRING -> PairingScreen(pairingViewModel)
+                }
             }
         }
     }
