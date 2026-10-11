@@ -1,5 +1,5 @@
 import { assertFails, assertSucceeds } from "@firebase/rules-unit-testing";
-import { afterAll, beforeEach, describe, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { authedDb, getTestEnv, seedConnection, teardownTestEnv } from "./setup";
 
 const userAUid = "user-a";
@@ -35,6 +35,14 @@ describe("firestore.rules", () => {
     const db = await authedDb(userAUid);
     await assertSucceeds(db.doc(`connections/${connectionId}`).get());
     await assertFails(db.doc(`connections/${connectionId}`).update({ streak: 999 }));
+  });
+
+  it("lets any signed-in user get a connection doc that does not exist", async () => {
+    // A typo'd/stale connectionId must come back as a non-existent snapshot, not
+    // PERMISSION_DENIED - the widget needs to render "연결 끊김" rather than throw.
+    const db = await authedDb(strangerUid);
+    const snap = await assertSucceeds(db.doc("connections/does-not-exist").get());
+    expect(snap.exists).toBe(false);
   });
 
   it("denies a non-member from reading the connection", async () => {

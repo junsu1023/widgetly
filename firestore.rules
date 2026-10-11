@@ -11,7 +11,15 @@ service cloud.firestore {
       match /tokens/{tokenId} { allow read, write: if false; }
     }
     match /connections/{connectionId} {
-      allow get: if request.auth != null && request.auth.uid in resource.data.memberUids;
+      // `resource` is null when the requested document doesn't exist, and
+      // evaluating `resource.data.memberUids` on null is a rules evaluation
+      // error, which the client sees as PERMISSION_DENIED rather than
+      // "not found" - so a typo'd connectionId surfaced as a thrown exception
+      // instead of "연결 끊김". Allowing the read of a document that doesn't exist
+      // leaks nothing (there is no data), and the membership check still gates
+      // every document that does exist.
+      allow get: if request.auth != null
+                  && (resource == null || request.auth.uid in resource.data.memberUids);
       allow list, create, update, delete: if false;
       match /signals/{signalId} {
         allow get: if request.auth != null
