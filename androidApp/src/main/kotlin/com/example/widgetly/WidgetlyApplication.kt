@@ -45,6 +45,11 @@ class WidgetlyApplication : Application() {
         FirebaseWidgetlyFunctions(Firebase.functions(Firebase.app))
     }
 
+    // Lifted out of bootstrapFirebase() so the signed-in uid is reachable from the
+    // widget too: ConnectionGlanceWidget needs it to tell which half of
+    // Connection.lastSignalByUid is the partner's.
+    private val auth by lazy { Firebase.auth(Firebase.app) }
+
     // Named-database Firestore instance - see ConnectionRepository's doc comment:
     // this client has no `(default)` database to fall back to.
     private val connectionRepo: ConnectionRepository by lazy {
@@ -78,7 +83,6 @@ class WidgetlyApplication : Application() {
      * app-scoped via `Firebase.app` for consistency rather than any bare accessor.
      */
     private fun bootstrapFirebase() {
-        val auth = Firebase.auth(Firebase.app)
         applicationScope.launch {
             ensureSignedIn(auth)
             FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
@@ -92,5 +96,12 @@ class WidgetlyApplication : Application() {
         val ddayRepository: DdayRepository get() = instance.repository
         val widgetlyFunctions: WidgetlyFunctions get() = instance.functions
         val connectionRepository: ConnectionRepository get() = instance.connectionRepo
+
+        /**
+         * Null until anonymous sign-in completes (it runs off [applicationScope] on
+         * launch), and after a sign-out. Callers must handle null rather than assume
+         * a uid is available - the widget just omits the partner's signal line.
+         */
+        val currentUid: String? get() = instance.auth.currentUser?.uid
     }
 }

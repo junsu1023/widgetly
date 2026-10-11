@@ -4,6 +4,8 @@ import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasText
 import com.example.widgetly.connection.Connection
 import com.example.widgetly.connection.ConnectionType
+import com.example.widgetly.connection.SignalSummary
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import org.junit.Test
 
@@ -31,6 +33,7 @@ class ConnectionGlanceWidgetTest {
                 connectionId = sampleConnection.id,
                 connectionState = sampleConnection,
                 rateLimitedAt = null,
+                sendFailedAt = null,
                 themeId = null,
             )
         }
@@ -44,6 +47,7 @@ class ConnectionGlanceWidgetTest {
                 connectionId = sampleConnection.id,
                 connectionState = sampleConnection.copy(status = "disconnected"),
                 rateLimitedAt = null,
+                sendFailedAt = null,
                 themeId = null,
             )
         }
@@ -57,6 +61,7 @@ class ConnectionGlanceWidgetTest {
                 connectionId = sampleConnection.id,
                 connectionState = null,
                 rateLimitedAt = null,
+                sendFailedAt = null,
                 themeId = null,
             )
         }
@@ -70,6 +75,7 @@ class ConnectionGlanceWidgetTest {
                 connectionId = null,
                 connectionState = null,
                 rateLimitedAt = null,
+                sendFailedAt = null,
                 themeId = null,
             )
         }
@@ -83,9 +89,105 @@ class ConnectionGlanceWidgetTest {
                 connectionId = sampleConnection.id,
                 connectionState = sampleConnection,
                 rateLimitedAt = System.currentTimeMillis(),
+                sendFailedAt = null,
                 themeId = null,
             )
         }
         onNode(hasText("잠시 후 다시 보내주세요")).assertExists()
+    }
+
+    @Test
+    fun showsThePartnersLatestSignal() = runGlanceAppWidgetUnitTest {
+        provideComposable {
+            ConnectionWidgetContent(
+                connectionId = sampleConnection.id,
+                connectionState = sampleConnection.copy(
+                    lastSignalByUid = mapOf(
+                        "uidA" to SignalSummary("star", Instant.fromEpochSeconds(1)),
+                        "uidB" to SignalSummary("heart", Instant.fromEpochSeconds(2)),
+                    ),
+                ),
+                rateLimitedAt = null,
+                sendFailedAt = null,
+                themeId = null,
+                myUid = "uidA",
+            )
+        }
+        onNode(hasText("상대 신호: heart")).assertExists()
+    }
+
+    @Test
+    fun omitsThePartnersSignalWhenThisDeviceHasNoUidYet() = runGlanceAppWidgetUnitTest {
+        provideComposable {
+            ConnectionWidgetContent(
+                connectionId = sampleConnection.id,
+                connectionState = sampleConnection.copy(
+                    lastSignalByUid = mapOf("uidB" to SignalSummary("heart", Instant.fromEpochSeconds(2))),
+                ),
+                rateLimitedAt = null,
+                sendFailedAt = null,
+                themeId = null,
+                myUid = null,
+            )
+        }
+        onNode(hasText("상대 신호: heart")).assertDoesNotExist()
+    }
+
+    @Test
+    fun hidesTheSignalButtonWhileCoolingDown() = runGlanceAppWidgetUnitTest {
+        provideComposable {
+            ConnectionWidgetContent(
+                connectionId = sampleConnection.id,
+                connectionState = sampleConnection,
+                rateLimitedAt = System.currentTimeMillis(),
+                sendFailedAt = null,
+                themeId = null,
+            )
+        }
+        onNode(hasText("신호 보내기")).assertDoesNotExist()
+    }
+
+    @Test
+    fun clearsTheCooldownOnceTheWindowHasElapsed() = runGlanceAppWidgetUnitTest {
+        provideComposable {
+            ConnectionWidgetContent(
+                connectionId = sampleConnection.id,
+                connectionState = sampleConnection,
+                rateLimitedAt = System.currentTimeMillis() - SIGNAL_FEEDBACK_WINDOW_MS - 1,
+                sendFailedAt = null,
+                themeId = null,
+            )
+        }
+        onNode(hasText("잠시 후 다시 보내주세요")).assertDoesNotExist()
+        onNode(hasText("신호 보내기")).assertExists()
+    }
+
+    @Test
+    fun showsSendFailedMessageAndKeepsTheButton() = runGlanceAppWidgetUnitTest {
+        provideComposable {
+            ConnectionWidgetContent(
+                connectionId = sampleConnection.id,
+                connectionState = sampleConnection,
+                rateLimitedAt = null,
+                sendFailedAt = System.currentTimeMillis(),
+                themeId = null,
+            )
+        }
+        onNode(hasText("전송 실패, 다시 시도해주세요")).assertExists()
+        onNode(hasText("신호 보내기")).assertExists()
+    }
+
+    @Test
+    fun clearsTheSendFailedMessageOnceTheWindowHasElapsed() = runGlanceAppWidgetUnitTest {
+        provideComposable {
+            ConnectionWidgetContent(
+                connectionId = sampleConnection.id,
+                connectionState = sampleConnection,
+                rateLimitedAt = null,
+                sendFailedAt = System.currentTimeMillis() - SIGNAL_FEEDBACK_WINDOW_MS - 1,
+                themeId = null,
+            )
+        }
+        onNode(hasText("전송 실패, 다시 시도해주세요")).assertDoesNotExist()
     }
 }

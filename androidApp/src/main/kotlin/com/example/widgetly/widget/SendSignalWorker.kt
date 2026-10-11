@@ -1,6 +1,7 @@
 package com.example.widgetly.widget
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
@@ -52,15 +53,22 @@ class SendSignalWorker @JvmOverloads constructor(
             // transient/network-class codes should be retried - a genuine
             // client error (e.g. invalid-argument) would just fail the same way
             // again and again, wasting WorkManager's retry budget forever.
-            return if (e.code in TRANSIENT_FUNCTIONS_CODES) Result.retry() else Result.failure()
+            if (e.code in TRANSIENT_FUNCTIONS_CODES) return Result.retry()
+            // Terminal failure (a retry branch above isn't terminal yet, so it must
+            // not show anything): leave a marker so the widget says "전송 실패" instead
+            // of looking like the signal went through. Mirrors iOS's markSendFailed.
+            markSignalFeedback(applicationContext, connectionId, SIGNAL_SEND_FAILED_AT_KEY)
+            return Result.failure()
         }
 
         if (signalResult.rateLimited) {
             // Review focus: a rate-limited response is NOT silent success from the
             // user's point of view - leave a marker in the matching widget's Glance
             // state so it can show "잠시 후 다시 보내주세요" instead of looking like the
-            // signal just went through.
-            markRateLimited(applicationContext, connectionId)
+            // signal just went through. SendSignalAction already set this marker on
+            // the tap itself; re-setting it here restarts the window from when the
+            // server actually rejected the call.
+            markSignalFeedback(applicationContext, connectionId, SIGNAL_RATE_LIMITED_AT_KEY)
         }
         return Result.success()
     }
@@ -81,16 +89,27 @@ class SendSignalWorker @JvmOverloads constructor(
             FirebaseFunctionsException.Code.ABORTED,
         )
 
-        private suspend fun markRateLimited(context: Context, connectionId: String) {
+        /**
+         * Stamps one of the signal-feedback markers (rate-limited / send-failed) on
+         * every widget instance configured for this connection and redraws it. Both
+         * markers are read as an elapsed-time window, so a delayed redraw is also
+         * scheduled to clear the message once that window passes.
+         */
+        private suspend fun markSignalFeedback(
+            context: Context,
+            connectionId: String,
+            key: Preferences.Key<Long>,
+        ) {
             val glanceIds = GlanceAppWidgetManager(context).getGlanceIds(ConnectionGlanceWidget::class.java)
             for (glanceId in glanceIds) {
                 val state = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
                 if (state[CONNECTION_ID_KEY] != connectionId) continue
                 updateAppWidgetState(context, glanceId) { prefs ->
-                    prefs[SIGNAL_RATE_LIMITED_AT_KEY] = System.currentTimeMillis()
+                    prefs[key] = System.currentTimeMillis()
                 }
                 ConnectionGlanceWidget().update(context, glanceId)
             }
+            scheduleSignalFeedbackClear(context)
         }
     }
 }
