@@ -107,17 +107,30 @@ private func fetchConnectionSnapshotFromServer(connectionId: String) async -> Co
         return nil
     }
 
-    // Newest signal across both members; the view decides whether it's the
-    // partner's (it compares the sender against this device's own uid). The
-    // callable returns ISO-8601 UTC strings of a fixed width, which sort
-    // lexicographically, so finding the newest needs no date parsing.
-    let latest = result.lastSignalByUid.max { $0.value.sentAt < $1.value.sentAt }
+    let partner = selectPartnerSignal(from: result.lastSignalByUid, ownUid: loadCachedOwnUid())
     return ConnectionSnapshot(
         status: result.status,
         streak: result.streak,
-        lastSignalPreset: latest?.value.presetType,
-        lastSignalSenderUid: latest?.key
+        lastSignalPreset: partner?.value.presetType,
+        lastSignalSenderUid: partner?.key
     )
+}
+
+/// Picks the entry that is specifically the PARTNER's, not just the newest
+/// overall — picking by recency alone would surface this device's own signal
+/// whenever it sent last, hiding the partner's (the bug this function fixes).
+/// Falls back to newest-overall only when the own uid isn't cached yet (main
+/// app hasn't signed in far enough to write it), matching the same
+/// "omit/guess-conservatively rather than assert" convention as
+/// `ConnectionWidgetEntryView.partnerSignal(of:)`.
+func selectPartnerSignal(
+    from lastSignalByUid: [String: GetConnectionResult.Signal],
+    ownUid: String?
+) -> (key: String, value: GetConnectionResult.Signal)? {
+    if let ownUid {
+        return lastSignalByUid.first { $0.key != ownUid }
+    }
+    return lastSignalByUid.max { $0.value.sentAt < $1.value.sentAt }
 }
 
 /// The raw marker timestamps, exposed (not just the booleans below) so
@@ -341,7 +354,14 @@ struct ConnectionWidgetProvider: AppIntentTimelineProvider {
             connection: snapshot,
             rateLimited: isRateLimited(connectionId: connectionId, at: date),
             sendFailed: isSendFailed(connectionId: connectionId, at: date),
-            hasEverLoaded: snapshot != nil || loadLastFetchedAt(connectionId: connectionId) != nil,
+            // Deliberately NOT OR'd with loadLastFetchedAt(connectionId:): that only
+            // tracks whether a server fetch was ever ATTEMPTED (see markFetched's doc
+            // comment), not whether anything was actually learned. timeline(for:)
+            // marks an attempt and builds this same entry in one call, so OR'ing it in
+            // here made this branch true before "불러오는 중" could ever render even
+            // once in production - only a real snapshot (from a push or a successful
+            // fetch) means there's something to show instead of "still don't know".
+            hasEverLoaded: snapshot != nil,
             ownUid: loadCachedOwnUid()
         )
     }

@@ -65,8 +65,6 @@
 			membershipExceptions = (
 				AppIntent.swift,
 				Assets.xcassets,
-				ConnectionWidget.swift,
-				ConnectionWidgetConfigurationIntent.swift,
 				DdayWidgetExtension.swift,
 				DdayWidgetExtensionBundle.swift,
 				Info.plist,
