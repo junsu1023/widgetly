@@ -32,7 +32,7 @@
 - `androidApp` — Android 앱 엔트리 포인트. 홈 위젯(Glance)도 이 안에 위치.
 - `iosApp` — iOS 앱 엔트리 포인트(SwiftUI). 홈 위젯(WidgetKit) extension도 이 프로젝트 안에 위치.
 - `shared-core` — **Firebase에 의존하지 않는** 공통 로직/데이터 모델/Compose UI(디데이 계산, 테마, 로컬 저장). iOS 프레임워크 이름 `SharedCore`.
-- `shared` — Firebase에 의존하는 공통 코드(연결/인증/푸시) + 앱 셸 UI. `api(project(":shared-core"))`로 `shared-core`를 재노출하므로 `androidApp`/iosApp 메인 타겟은 `:shared` 하나만 보면 된다. iOS 프레임워크 이름 `Shared`.
+- `shared` — Firebase에 의존하는 공통 코드(연결/인증/푸시) + 앱 셸 UI. iOS 프레임워크 이름 `Shared`. `androidApp`/iosApp 메인 타겟이 `:shared` 하나만 보면 되도록 두 가지를 **같이** 선언한다 — `api(project(":shared-core"))`(JVM/Android 컴파일 클래스패스 전파)와 프레임워크 블록의 `export(project(":shared-core"))`(생성되는 Objective-C 헤더 노출). `api`만으로는 `Shared.h`에 `DdayEntry`/`ThemeCatalog` 같은 타입이 전혀 실리지 않아 Swift에서 쓸 수 없다 — 둘 중 하나만 지우지 말 것.
 
 **이 분리를 합치지 말 것.** Kotlin/Native는 모듈의 의존성 그래프 전체를 하나의 정적 프레임워크 바이너리로 링크하고 미사용 cinterop 코드를 제거해주지 않는다. 그래서 `Shared.framework`를 링크하는 타겟은 실제 Firebase iOS SDK도 같이 링크해야만 링크가 된다 — iOS 홈 위젯 익스텐션(`DdayWidgetExtensionExtension`)은 Firebase SDK를 넣지 않으므로 `SharedCore.framework`만 링크한다(`import SharedCore`). Firebase를 쓰는 코드를 `shared-core`에 넣는 순간 이미 출시된 디데이 위젯의 링크가 깨진다.
 

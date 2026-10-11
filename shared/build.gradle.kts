@@ -16,6 +16,15 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "Shared"
             isStatic = true
+            // Gradle's `api(project(":shared-core"))` below only propagates on the
+            // JVM/Android compile classpath - it does NOT put :shared-core's
+            // declarations into this framework's generated Objective-C header. Without
+            // this line `Shared.h` exposes no DdayEntry/ThemeCatalog/DdayCalculator/
+            // IosDdayStorage at all, so Swift in the iosApp main target can't reach
+            // them through `import Shared`. Orthogonal to the :shared/:shared-core
+            // split itself (that's about which Firebase-touching binary code links
+            // into which target); this is only about which headers are exposed.
+            export(project(":shared-core"))
         }
     }
     
@@ -52,7 +61,8 @@ kotlin {
             // api, not implementation: Dday/theme types moved to :shared-core but are
             // still part of :shared's public API surface (AppRoot, MainViewController)
             // and are consumed directly by :androidApp, so they must stay on
-            // consumers' compile classpath.
+            // consumers' compile classpath. This covers the JVM/Android side only -
+            // Swift visibility needs the `export(...)` in the framework block above.
             api(project(":shared-core"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
