@@ -49,6 +49,11 @@ kotlin {
             implementation(libs.androidx.datastore.preferences)
         }
         commonMain.dependencies {
+            // api, not implementation: Dday/theme types moved to :shared-core but are
+            // still part of :shared's public API surface (AppRoot, MainViewController)
+            // and are consumed directly by :androidApp, so they must stay on
+            // consumers' compile classpath.
+            api(project(":shared-core"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

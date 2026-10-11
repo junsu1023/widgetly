@@ -5,7 +5,7 @@
 
 import WidgetKit
 import AppIntents
-import Shared
+import SharedCore
 
 struct DdayEntryPickerEntity: AppEntity {
     let id: String

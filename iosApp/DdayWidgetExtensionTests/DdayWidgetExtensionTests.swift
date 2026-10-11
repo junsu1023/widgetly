@@ -4,7 +4,7 @@
 //
 
 import Testing
-import Shared
+import SharedCore
 import Foundation
 
 extension Date {

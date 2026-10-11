@@ -5,7 +5,7 @@
 
 import WidgetKit
 import SwiftUI
-import Shared
+import SharedCore
 
 private extension Date {
     func toKotlinLocalDate() -> Kotlinx_datetimeLocalDate {
