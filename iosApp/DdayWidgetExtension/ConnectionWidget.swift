@@ -376,12 +376,13 @@ struct ConnectionWidgetEntryView: View {
                 if let connection = entry.connection, connection.status != "disconnected" {
                     VStack(spacing: 4) {
                         Text("스트릭 \(connection.streak)")
+                            .font(.custom("DoHyeon-Regular", size: 18))
                         partnerSignal(of: connection)
                         if entry.rateLimited {
                             // Retrying immediately would just hit the backend's
                             // rate limit again, so no button while this holds.
                             Text("곧 다시 보내보세요")
-                                .font(.caption)
+                                .font(.custom("Dongle-Regular", size: 15))
                         } else {
                             // A failed send (network error, backend rejection,
                             // malformed response) is worth retrying right away —
@@ -389,22 +390,26 @@ struct ConnectionWidgetEntryView: View {
                             // add a caption so the failure isn't silent.
                             if entry.sendFailed {
                                 Text("전송 실패, 다시 시도해주세요")
-                                    .font(.caption)
+                                    .font(.custom("Dongle-Regular", size: 15))
                             }
                             Button(intent: SendSignalIntent(connectionId: connectionId)) {
                                 Text("신호 보내기")
+                                    .font(.custom("DoHyeon-Regular", size: 14))
                             }
                         }
                     }
                 } else if entry.hasEverLoaded {
                     Text("연결 끊김")
+                        .font(.custom("Dongle-Regular", size: 16))
                 } else {
                     // Configured, but no push has arrived and no fetch has
                     // happened yet — not the same thing as a dead connection.
                     Text("불러오는 중")
+                        .font(.custom("Dongle-Regular", size: 16))
                 }
             } else {
                 Text("설정 필요")
+                    .font(.custom("Dongle-Regular", size: 16))
             }
         }
     }
@@ -419,7 +424,7 @@ struct ConnectionWidgetEntryView: View {
            senderUid != ownUid,
            let preset = connection.lastSignalPreset {
             Text("상대 신호: \(preset)")
-                .font(.caption)
+                .font(.custom("Dongle-Regular", size: 15))
         }
     }
 }

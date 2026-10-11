@@ -101,6 +101,7 @@ struct DdayWidgetExtensionEntryView: View {
 
     var body: some View {
         Text(entry.label)
+            .font(.custom("DoHyeon-Regular", size: 20))
             .foregroundStyle(Color(argb: entry.foregroundColorArgb))
     }
 }
