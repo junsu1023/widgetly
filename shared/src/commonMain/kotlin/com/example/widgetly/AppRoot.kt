@@ -37,14 +37,16 @@ fun AppRoot(ddayViewModel: DdayViewModel, pairingViewModel: PairingViewModel) {
 
     WidgetlyTheme {
         Column(modifier = Modifier.fillMaxSize()) {
-            Button(
-                onClick = {
-                    currentScreen = if (currentScreen == AppScreen.DDAY_LIST) AppScreen.PAIRING else AppScreen.DDAY_LIST
-                },
-                shape = WidgetlyButtonShape,
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-            ) {
-                Text(if (currentScreen == AppScreen.DDAY_LIST) "커플/친구 연결하기" else "디데이 목록으로")
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Button(
+                    onClick = {
+                        currentScreen = if (currentScreen == AppScreen.DDAY_LIST) AppScreen.PAIRING else AppScreen.DDAY_LIST
+                    },
+                    shape = WidgetlyButtonShape,
+                    modifier = Modifier.padding(16.dp),
+                ) {
+                    Text(if (currentScreen == AppScreen.DDAY_LIST) "커플/친구 연결하기" else "디데이 목록으로")
+                }
             }
             Box(modifier = Modifier.weight(1f)) {
                 // On top, not behind: DdayListScreen/PairingScreen each wrap their

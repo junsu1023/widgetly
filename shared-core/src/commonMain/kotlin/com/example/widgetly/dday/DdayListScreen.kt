@@ -49,8 +49,11 @@ fun DdayListScreen(viewModel: DdayViewModel) {
     }
 
     Scaffold { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 OutlinedTextField(
                     value = newTitle,
                     onValueChange = { newTitle = it },
@@ -78,7 +81,7 @@ fun DdayListScreen(viewModel: DdayViewModel) {
                     modifier = Modifier.weight(1f),
                 )
             }
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Text("기준일을 1일로 세기")
                 Switch(checked = countStartAtOne, onCheckedChange = { countStartAtOne = it })
             }
@@ -86,7 +89,7 @@ fun DdayListScreen(viewModel: DdayViewModel) {
                 Text("매년 반복")
                 Switch(checked = repeatYearly, onCheckedChange = { repeatYearly = it })
             }
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Button(
                     shape = WidgetlyButtonShape,
                     onClick = {
