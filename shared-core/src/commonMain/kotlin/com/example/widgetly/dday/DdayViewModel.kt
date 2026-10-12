@@ -10,16 +10,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-sealed interface DdayEvent {
-    object Refresh : DdayEvent
-    data class Upsert(val entry: DdayEntry) : DdayEvent
-    data class Remove(val id: String) : DdayEvent
-}
-
-sealed interface DdayEffect {
-    data class ShowError(val message: String) : DdayEffect
-}
-
 data class DdayUiState(val entries: List<DdayEntry> = emptyList())
 
 class DdayViewModel(private val repository: DdayRepository) : ViewModel() {

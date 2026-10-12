@@ -14,11 +14,6 @@ sealed interface PairingUiState {
     data class Error(val message: String) : PairingUiState
 }
 
-sealed interface PairingEvent {
-    data class CreateCode(val type: ConnectionType) : PairingEvent
-    data class Redeem(val code: String) : PairingEvent
-}
-
 /**
  * Drives the pairing code creation/redemption screen. Both `functions` calls go
  * through the server's callable Cloud Functions (see WidgetlyFunctions' doc
