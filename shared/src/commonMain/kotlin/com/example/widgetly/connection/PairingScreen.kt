@@ -34,10 +34,10 @@ fun PairingScreen(viewModel: PairingViewModel) {
             Text("커플/친구 연결")
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { viewModel.createCode(ConnectionType.COUPLE) }, shape = WidgetlyButtonShape) {
+                Button(onClick = { viewModel.onEvent(PairingEvent.CreateCode(ConnectionType.COUPLE)) }, shape = WidgetlyButtonShape) {
                     Text("커플 코드 생성")
                 }
-                Button(onClick = { viewModel.createCode(ConnectionType.FRIEND) }, shape = WidgetlyButtonShape) {
+                Button(onClick = { viewModel.onEvent(PairingEvent.CreateCode(ConnectionType.FRIEND)) }, shape = WidgetlyButtonShape) {
                     Text("친구 코드 생성")
                 }
             }
@@ -50,7 +50,7 @@ fun PairingScreen(viewModel: PairingViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Button(onClick = { viewModel.redeem(enteredCode) }, shape = WidgetlyButtonShape) {
+            Button(onClick = { viewModel.onEvent(PairingEvent.Redeem(enteredCode)) }, shape = WidgetlyButtonShape) {
                 Text("연결하기")
             }
 

@@ -2,6 +2,7 @@ package com.example.widgetly.dday
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -31,24 +32,40 @@ class DdayViewModelTest {
     }
 
     @Test
-    fun `refresh loads entries from the repository`() = runTest {
+    fun `Refresh loads entries from the repository`() = runTest {
         val repo = DdayRepository(FakeDdayStorage(listOf(sampleEntry)))
         val viewModel = DdayViewModel(repo)
-        viewModel.refresh()
-        assertEquals(listOf(sampleEntry), viewModel.entries.value)
+        viewModel.onEvent(DdayEvent.Refresh)
+        assertEquals(listOf(sampleEntry), viewModel.state.value.entries)
     }
 
     @Test
-    fun `upsert adds the entry and reflects it in entries`() = runTest {
+    fun `Upsert adds the entry and reflects it in state`() = runTest {
         val viewModel = DdayViewModel(DdayRepository(FakeDdayStorage()))
-        viewModel.upsert(sampleEntry)
-        assertEquals(listOf(sampleEntry), viewModel.entries.value)
+        viewModel.onEvent(DdayEvent.Upsert(sampleEntry))
+        assertEquals(listOf(sampleEntry), viewModel.state.value.entries)
     }
 
     @Test
-    fun `a rejected upsert does not crash the viewModelScope`() = runTest {
+    fun `a rejected Upsert does not crash the viewModelScope and leaves state unchanged`() = runTest {
         val viewModel = DdayViewModel(DdayRepository(FakeDdayStorage()))
-        viewModel.upsert(sampleEntry.copy(title = "   "))
-        assertEquals(emptyList(), viewModel.entries.value)
+        viewModel.onEvent(DdayEvent.Upsert(sampleEntry.copy(title = "   ")))
+        assertEquals(emptyList(), viewModel.state.value.entries)
+    }
+
+    @Test
+    fun `a rejected Upsert emits a ShowError effect`() = runTest {
+        val viewModel = DdayViewModel(DdayRepository(FakeDdayStorage()))
+        viewModel.onEvent(DdayEvent.Upsert(sampleEntry.copy(title = "   ")))
+        assertEquals(true, viewModel.effects.first() is DdayEffect.ShowError)
+    }
+
+    @Test
+    fun `Remove deletes the entry and reflects it in state`() = runTest {
+        val repo = DdayRepository(FakeDdayStorage(listOf(sampleEntry)))
+        val viewModel = DdayViewModel(repo)
+        viewModel.onEvent(DdayEvent.Refresh)
+        viewModel.onEvent(DdayEvent.Remove(sampleEntry.id))
+        assertEquals(emptyList(), viewModel.state.value.entries)
     }
 }

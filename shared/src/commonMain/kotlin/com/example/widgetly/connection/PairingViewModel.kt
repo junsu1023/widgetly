@@ -14,16 +14,33 @@ sealed interface PairingUiState {
     data class Error(val message: String) : PairingUiState
 }
 
+sealed interface PairingEvent {
+    data class CreateCode(val type: ConnectionType) : PairingEvent
+    data class Redeem(val code: String) : PairingEvent
+}
+
 /**
  * Drives the pairing code creation/redemption screen. Both `functions` calls go
  * through the server's callable Cloud Functions (see WidgetlyFunctions' doc
  * comment) - this ViewModel just turns their result/failure into UI state.
+ *
+ * No Effect channel here (unlike DdayViewModel): every outcome - success or
+ * failure - is already shown as persistent on-screen state (CodeCreated,
+ * Connected, Error), not a one-off notification, so there's nothing a
+ * transient effect would add.
  */
 class PairingViewModel(private val functions: WidgetlyFunctions) : ViewModel() {
     private val _state = MutableStateFlow<PairingUiState>(PairingUiState.Idle)
     val state: StateFlow<PairingUiState> = _state
 
-    fun createCode(type: ConnectionType) {
+    fun onEvent(event: PairingEvent) {
+        when (event) {
+            is PairingEvent.CreateCode -> createCode(event.type)
+            is PairingEvent.Redeem -> redeem(event.code)
+        }
+    }
+
+    private fun createCode(type: ConnectionType) {
         viewModelScope.launch {
             try {
                 val code = functions.createPairingCode(type)
@@ -36,7 +53,7 @@ class PairingViewModel(private val functions: WidgetlyFunctions) : ViewModel() {
         }
     }
 
-    fun redeem(code: String) {
+    private fun redeem(code: String) {
         viewModelScope.launch {
             try {
                 val connectionId = functions.redeemPairingCode(code)

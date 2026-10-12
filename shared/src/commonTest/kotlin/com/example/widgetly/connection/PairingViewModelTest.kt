@@ -29,37 +29,37 @@ class PairingViewModelTest {
     }
 
     @Test
-    fun `createCode exposes the returned code as CodeCreated`() = runTest {
+    fun `CreateCode exposes the returned code as CodeCreated`() = runTest {
         val fake = FakeWidgetlyFunctions().apply { nextCode = "123456" }
         val viewModel = PairingViewModel(fake)
-        viewModel.createCode(ConnectionType.FRIEND)
+        viewModel.onEvent(PairingEvent.CreateCode(ConnectionType.FRIEND))
         assertEquals(PairingUiState.CodeCreated("123456"), viewModel.state.value)
     }
 
     @Test
-    fun `redeem exposes the returned connectionId as Connected`() = runTest {
+    fun `Redeem exposes the returned connectionId as Connected`() = runTest {
         val fake = FakeWidgetlyFunctions().apply { nextConnectionId = "conn-1" }
         val viewModel = PairingViewModel(fake)
-        viewModel.redeem("123456")
+        viewModel.onEvent(PairingEvent.Redeem("123456"))
         assertEquals(PairingUiState.Connected("conn-1"), viewModel.state.value)
     }
 
     @Test
-    fun `a failed redeem exposes an Error state instead of throwing`() = runTest {
+    fun `a failed Redeem exposes an Error state instead of throwing`() = runTest {
         val fake = FakeWidgetlyFunctions().apply { shouldThrow = true }
         val viewModel = PairingViewModel(fake)
-        viewModel.redeem("000000")
+        viewModel.onEvent(PairingEvent.Redeem("000000"))
         assertTrue(viewModel.state.value is PairingUiState.Error)
     }
 
     @Test
-    fun `cancelling viewModelScope mid-createCode propagates cancellation instead of becoming Error`() = runTest {
+    fun `cancelling viewModelScope mid-CreateCode propagates cancellation instead of becoming Error`() = runTest {
         // delayMillis gives cancel() a suspension point to interrupt - without it the
         // fake call completes synchronously and there's nothing to cancel mid-flight.
         val fake = FakeWidgetlyFunctions().apply { nextCode = "123456"; delayMillis = 1_000 }
         val viewModel = PairingViewModel(fake)
 
-        viewModel.createCode(ConnectionType.FRIEND)
+        viewModel.onEvent(PairingEvent.CreateCode(ConnectionType.FRIEND))
         val job = viewModel.viewModelScope.coroutineContext[Job]!!
         viewModel.viewModelScope.cancel()
 

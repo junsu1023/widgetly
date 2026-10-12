@@ -12,6 +12,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +36,7 @@ import kotlin.time.ExperimentalTime
 @Suppress("DEPRECATION")
 @Composable
 fun DdayListScreen(viewModel: DdayViewModel) {
-    val entries by viewModel.entries.collectAsState()
+    val uiState by viewModel.state.collectAsState()
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
 
     var newTitle by remember { mutableStateOf("") }
@@ -44,11 +46,21 @@ fun DdayListScreen(viewModel: DdayViewModel) {
     var countStartAtOne by remember { mutableStateOf(false) }
     var repeatYearly by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     LaunchedEffect(Unit) {
-        viewModel.refresh()
+        viewModel.onEvent(DdayEvent.Refresh)
     }
 
-    Scaffold { padding ->
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is DdayEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+            }
+        }
+    }
+
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -103,7 +115,7 @@ fun DdayListScreen(viewModel: DdayViewModel) {
                         repeatYearly = repeatYearly,
                     )
                     if (entry != null) {
-                        viewModel.upsert(entry)
+                        viewModel.onEvent(DdayEvent.Upsert(entry))
                         newTitle = ""
                     }
                 }) {
@@ -111,14 +123,14 @@ fun DdayListScreen(viewModel: DdayViewModel) {
                 }
             }
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(entries, key = { it.id }) { entry ->
+                items(uiState.entries, key = { it.id }) { entry ->
                     val result = calculateDday(entry, today)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text("${entry.title}: ${result.label}")
-                        IconButton(onClick = { viewModel.remove(entry.id) }) {
+                        IconButton(onClick = { viewModel.onEvent(DdayEvent.Remove(entry.id)) }) {
                             Text("삭제")
                         }
                     }
