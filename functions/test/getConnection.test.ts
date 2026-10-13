@@ -61,6 +61,7 @@ describe("getConnectionLogic", () => {
       lastSignalByUid: {
         [uidB]: { presetType: "heart", sentAt: "2026-02-03T04:05:06.000Z" },
       },
+      mascotByUid: {},
     });
   });
 
@@ -111,6 +112,36 @@ describe("getConnectionLogic", () => {
       expect(error).toBeInstanceOf(HttpsError);
       expect((error as HttpsError).code).toBe("invalid-argument");
     }
+  });
+
+  it("returns mascotByUid when set on the connection", async () => {
+    const mascotByUid = { [uidA]: "mascot-1", [uidB]: "mascot-2" };
+    await seedConnection(firestore, connectionId, [uidA, uidB], { mascotByUid });
+
+    const result = await getConnectionLogic(uidA, { connectionId }, firestore);
+
+    expect(result.mascotByUid).toEqual(mascotByUid);
+  });
+
+  it("returns an empty mascotByUid for a connection with no mascotByUid field", async () => {
+    // Explicitly omit mascotByUid by not including it in overrides
+    const connectionDoc: ConnectionDoc = {
+      memberUids: [uidA, uidB],
+      type: "couple",
+      status: "active",
+      createdAt: Timestamp.now(),
+      anniversaryDate: "2026-01-01",
+      anniversaryUpdatedBy: uidA,
+      streak: 7,
+      streakUpdatedDate: "2026-01-01",
+      lastSignalByUid: {},
+      // mascotByUid intentionally omitted
+    };
+    await firestore.doc(`connections/${connectionId}`).set(connectionDoc);
+
+    const result = await getConnectionLogic(uidA, { connectionId }, firestore);
+
+    expect(result.mascotByUid).toEqual({});
   });
 });
 

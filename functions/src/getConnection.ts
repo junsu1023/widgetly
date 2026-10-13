@@ -18,6 +18,7 @@ export type GetConnectionResult = {
   streak: number;
   memberUids: string[];
   lastSignalByUid: Record<string, { presetType: string; sentAt: string }>;
+  mascotByUid: Record<string, string>;
 };
 
 export async function getConnectionLogic(
@@ -66,6 +67,7 @@ export async function getConnectionLogic(
     streak: connection.streak,
     memberUids: connection.memberUids,
     lastSignalByUid,
+    mascotByUid: connection.mascotByUid ?? {},
   };
 }
 
