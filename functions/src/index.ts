@@ -16,3 +16,4 @@ export { sendSignal } from "./sendSignal";
 // widget's "공통 폴백" (spec 4.3) can re-read a connection without carrying the
 // Firebase SDK inside the extension.
 export { getConnection } from "./getConnection";
+export { updateMascot } from "./updateMascot";
