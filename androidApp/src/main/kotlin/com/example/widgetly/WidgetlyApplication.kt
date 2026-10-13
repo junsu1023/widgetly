@@ -13,6 +13,8 @@ import com.example.widgetly.connection.WidgetlyFunctions
 import com.example.widgetly.dday.AndroidDdayStorage
 import com.example.widgetly.dday.DdayRepository
 import com.example.widgetly.push.syncFcmToken
+import com.example.widgetly.theme.AndroidMascotPreferenceStorage
+import com.example.widgetly.theme.MascotPreferenceStorage
 import com.example.widgetly.widget.DDAY_REFRESH_TOKEN_KEY
 import com.example.widgetly.widget.DdayGlanceWidget
 import com.google.firebase.messaging.FirebaseMessaging
@@ -56,6 +58,8 @@ class WidgetlyApplication : Application() {
         FirestoreConnectionRepository(Firebase.firestore(Firebase.app, "widgetly"))
     }
 
+    private val mascotPrefs: MascotPreferenceStorage by lazy { AndroidMascotPreferenceStorage(this) }
+
     // SupervisorJob + CoroutineExceptionHandler, not a bare CoroutineScope: without
     // them an exception in any coroutine launched here (a Firebase call failing
     // offline, a decode error, ...) reaches the default uncaught-exception handler and
@@ -96,6 +100,7 @@ class WidgetlyApplication : Application() {
         val ddayRepository: DdayRepository get() = instance.repository
         val widgetlyFunctions: WidgetlyFunctions get() = instance.functions
         val connectionRepository: ConnectionRepository get() = instance.connectionRepo
+        val mascotPreferenceStorage: MascotPreferenceStorage get() = instance.mascotPrefs
 
         /**
          * Null until anonymous sign-in completes (it runs off [applicationScope] on

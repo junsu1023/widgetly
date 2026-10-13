@@ -44,6 +44,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.connection.Connection
+import com.example.widgetly.theme.MascotCatalog
 import com.example.widgetly.theme.ThemeCatalog
 import kotlinx.coroutines.flow.first
 import java.util.UUID
@@ -164,13 +165,17 @@ internal fun ConnectionWidgetContent(
         contentAlignment = Alignment.Center,
     ) {
         when {
-            connectionId == null -> EmptyStateWithMascot("설정 필요", textStyle)
+            // MascotCatalog.DEFAULT_MASCOT_ID is a placeholder here: Task 12 wires
+            // this up to WidgetlyApplication.mascotPreferenceStorage.read() /
+            // ConnectionMascotCornerDecoration, same way DdayGlanceWidget already
+            // does for its own EmptyStateWithMascot call sites.
+            connectionId == null -> EmptyStateWithMascot(MascotCatalog.DEFAULT_MASCOT_ID, "설정 필요", textStyle)
             connectionState === ConnectionLoading -> {}
-            connectionState == null -> EmptyStateWithMascot("연결 끊김", textStyle)
+            connectionState == null -> EmptyStateWithMascot(MascotCatalog.DEFAULT_MASCOT_ID, "연결 끊김", textStyle)
             else -> {
                 val connection = connectionState as Connection
                 if (connection.status == "disconnected") {
-                    EmptyStateWithMascot("연결 끊김", textStyle)
+                    EmptyStateWithMascot(MascotCatalog.DEFAULT_MASCOT_ID, "연결 끊김", textStyle)
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -220,7 +225,7 @@ internal fun ConnectionWidgetContent(
                             }
                         }
                     }
-                    MascotCornerDecoration()
+                    MascotCornerDecoration(MascotCatalog.DEFAULT_MASCOT_ID)
                 }
             }
         }

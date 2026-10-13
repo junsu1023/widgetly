@@ -25,6 +25,7 @@ private class FakeWidgetlyFunctions : WidgetlyFunctions {
     override suspend fun registerFcmToken(token: String, platform: String) = error("not used")
     override suspend fun createPairingCode(type: ConnectionType): String = error("not used")
     override suspend fun redeemPairingCode(code: String): String = error("not used")
+    override suspend fun updateMascot(connectionId: String, mascotId: String) = error("not used")
     override suspend fun sendSignal(connectionId: String, preset: String, signalId: String): SendSignalResult {
         exceptionToThrow?.let { throw it }
         return nextSendSignalResult

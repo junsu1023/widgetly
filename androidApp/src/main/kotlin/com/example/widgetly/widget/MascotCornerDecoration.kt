@@ -28,28 +28,50 @@ internal fun mascotCountForSize(size: DpSize): Int = when (size) {
     else -> 1
 }
 
-private const val MASCOT_CONTENT_DESCRIPTION = "quokka_corner"
+/**
+ * Maps a MascotCatalog id to its non-faint drawable, falling back to quokka
+ * for any unrecognized id (stale selection, bad data) - same fallback
+ * discipline as MascotCatalog.find.
+ */
+internal fun mascotDrawableRes(id: String): Int = when (id) {
+    "cat" -> R.drawable.cat
+    "bear" -> R.drawable.bear
+    "rabbit" -> R.drawable.rabbit
+    "hamster" -> R.drawable.hamster
+    "quokka" -> R.drawable.quokka
+    else -> R.drawable.quokka
+}
+
+/** Faint-variant counterpart of [mascotDrawableRes], same fallback. */
+internal fun mascotFaintDrawableRes(id: String): Int = when (id) {
+    "cat" -> R.drawable.cat_faint
+    "bear" -> R.drawable.bear_faint
+    "rabbit" -> R.drawable.rabbit_faint
+    "hamster" -> R.drawable.hamster_faint
+    "quokka" -> R.drawable.quokka_faint
+    else -> R.drawable.quokka_faint
+}
 
 /**
- * A row of faint quokkas pinned to the bottom-end corner, scaling 1-3 with
+ * A row of faint mascots pinned to the bottom-end corner, scaling 1-3 with
  * the widget's current size (requires SizeMode.Responsive(MASCOT_RESPONSIVE_SIZES)
  * on the host GlanceAppWidget so LocalSize.current reflects the real resize).
  * Shown only once real data (D-day label, streak) is on screen - the empty
  * states already have their own prominent mascot via EmptyStateWithMascot.
  *
- * quokka_faint (not quokka): Glance's Image has no runtime alpha/opacity
- * modifier (only a tint ColorFilter), so the faded look is baked into a
- * separate asset ahead of time (see drawable-nodpi/quokka_faint.png).
+ * The faint variant (not the plain one): Glance's Image has no runtime alpha/
+ * opacity modifier (only a tint ColorFilter), so the faded look is baked into a
+ * separate asset ahead of time (see the drawable-nodpi "_faint" variants).
  */
 @Composable
-internal fun MascotCornerDecoration() {
+internal fun MascotCornerDecoration(mascotId: String) {
     val count = mascotCountForSize(LocalSize.current)
     Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         Row {
             repeat(count) {
                 Image(
-                    provider = ImageProvider(R.drawable.quokka_faint),
-                    contentDescription = MASCOT_CONTENT_DESCRIPTION,
+                    provider = ImageProvider(mascotFaintDrawableRes(mascotId)),
+                    contentDescription = "${mascotId}_corner",
                     modifier = GlanceModifier.size(20.dp),
                 )
             }

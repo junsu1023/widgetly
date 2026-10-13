@@ -18,6 +18,7 @@ private val sampleConnection = Connection(
     anniversaryDate = LocalDate(2026, 1, 1),
     streak = 5,
     lastSignalByUid = emptyMap(),
+    mascotByUid = emptyMap(),
 )
 
 /**

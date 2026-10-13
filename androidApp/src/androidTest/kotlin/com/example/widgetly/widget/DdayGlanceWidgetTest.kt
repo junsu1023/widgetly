@@ -23,29 +23,29 @@ class DdayGlanceWidgetTest {
     fun showsDdayLabelAndCornerMascotWhenEntryExists() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(MASCOT_SIZE_SMALL)
         provideComposable {
-            DdayWidgetContent(entryId = sampleEntry.id, entryState = sampleEntry, themeId = null)
+            DdayWidgetContent(entryId = sampleEntry.id, entryState = sampleEntry, themeId = null, mascotId = "cat")
         }
         onNode(hasText("생일")).assertExists()
-        onAllNodes(hasContentDescriptionEqualTo("quokka_corner")).assertCountEquals(1)
+        onAllNodes(hasContentDescriptionEqualTo("cat_corner")).assertCountEquals(1)
     }
 
     @Test
     fun showsSetupNeededWithoutCornerMascotWhenNoEntryIsConfigured() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(MASCOT_SIZE_SMALL)
         provideComposable {
-            DdayWidgetContent(entryId = null, entryState = null, themeId = null)
+            DdayWidgetContent(entryId = null, entryState = null, themeId = null, mascotId = "cat")
         }
         onNode(hasText("설정 필요")).assertExists()
-        onAllNodes(hasContentDescriptionEqualTo("quokka_corner")).assertCountEquals(0)
+        onAllNodes(hasContentDescriptionEqualTo("cat_corner")).assertCountEquals(0)
     }
 
     @Test
     fun showsDeletedWithoutCornerMascotWhenEntryCannotBeFound() = runGlanceAppWidgetUnitTest {
         setAppWidgetSize(MASCOT_SIZE_SMALL)
         provideComposable {
-            DdayWidgetContent(entryId = sampleEntry.id, entryState = null, themeId = null)
+            DdayWidgetContent(entryId = sampleEntry.id, entryState = null, themeId = null, mascotId = "cat")
         }
         onNode(hasText("삭제됨")).assertExists()
-        onAllNodes(hasContentDescriptionEqualTo("quokka_corner")).assertCountEquals(0)
+        onAllNodes(hasContentDescriptionEqualTo("cat_corner")).assertCountEquals(0)
     }
 }

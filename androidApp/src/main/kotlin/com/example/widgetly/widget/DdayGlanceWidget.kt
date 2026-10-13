@@ -29,10 +29,10 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import com.example.widgetly.R
 import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.dday.DdayEntry
 import com.example.widgetly.dday.calculateDday
+import com.example.widgetly.theme.MascotCatalog
 import com.example.widgetly.theme.ThemeCatalog
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -71,14 +71,20 @@ class DdayGlanceWidget : GlanceAppWidget() {
                 }
             }
             val themeId = currentState(THEME_ID_KEY)
-            DdayWidgetContent(entryId, entryState, themeId)
+            // One-shot read, same as entryState above: mascotPreferenceStorage.read()
+            // is a suspend DataStore call, and there's no reactive currentState() key
+            // for it the way DDAY_ENTRY_ID_KEY works for the entry.
+            val mascotId by produceState(initialValue = MascotCatalog.DEFAULT_MASCOT_ID) {
+                value = WidgetlyApplication.mascotPreferenceStorage.read()
+            }
+            DdayWidgetContent(entryId, entryState, themeId, mascotId)
         }
     }
 }
 
 @OptIn(ExperimentalTime::class)
 @Composable
-internal fun DdayWidgetContent(entryId: String?, entryState: Any?, themeId: String?) {
+internal fun DdayWidgetContent(entryId: String?, entryState: Any?, themeId: String?, mascotId: String) {
     val theme = ThemeCatalog.find(themeId ?: ThemeCatalog.DEFAULT_THEME_ID)
     val backgroundColor = androidx.compose.ui.graphics.Color(theme.backgroundColorArgb)
     val foregroundColor = androidx.compose.ui.graphics.Color(theme.foregroundColorArgb)
@@ -101,11 +107,13 @@ internal fun DdayWidgetContent(entryId: String?, entryState: Any?, themeId: Stri
     ) {
         when {
             entryId == null -> EmptyStateWithMascot(
+                mascotId,
                 "설정 필요",
                 TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
             )
             entryState === Loading -> {}
             entryState == null -> EmptyStateWithMascot(
+                mascotId,
                 "삭제됨",
                 TextStyle(fontSize = 14.sp, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
             )
@@ -117,7 +125,7 @@ internal fun DdayWidgetContent(entryId: String?, entryState: Any?, themeId: Stri
                     "${entry.title}\n${result.label}",
                     style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorProvider(day = foregroundColor, night = foregroundColor)),
                 )
-                MascotCornerDecoration()
+                MascotCornerDecoration(mascotId)
             }
         }
     }
@@ -130,14 +138,14 @@ internal fun DdayWidgetContent(entryId: String?, entryState: Any?, themeId: Stri
  * DdayGlanceWidget and ConnectionGlanceWidget (same package).
  */
 @Composable
-internal fun EmptyStateWithMascot(message: String, style: TextStyle) {
+internal fun EmptyStateWithMascot(mascotId: String, message: String, style: TextStyle) {
     // 28.dp, not 48.dp: the widget's declared minHeight (40dp) plus the
     // surrounding 12dp padding on each side leaves little room before the
     // mascot + text overflow at the smallest size a user can resize the
     // widget down to.
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Image(
-            provider = ImageProvider(R.drawable.quokka),
+            provider = ImageProvider(mascotDrawableRes(mascotId)),
             contentDescription = null,
             modifier = GlanceModifier.size(28.dp),
         )
