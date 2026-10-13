@@ -54,6 +54,11 @@ class FirebaseWidgetlyFunctions(private val functions: FirebaseFunctions) : Widg
             .invoke(mapOf("connectionId" to connectionId, "preset" to preset, "signalId" to signalId))
         return SendSignalResult(result.data<SendSignalResponse>().rateLimited)
     }
+
+    override suspend fun updateMascot(connectionId: String, mascotId: String) {
+        functions.httpsCallable("updateMascot")
+            .invoke(mapOf("connectionId" to connectionId, "mascotId" to mascotId))
+    }
 }
 
 private val ConnectionType.wireValue: String

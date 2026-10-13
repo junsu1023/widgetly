@@ -13,4 +13,5 @@ interface WidgetlyFunctions {
     suspend fun createPairingCode(type: ConnectionType): String
     suspend fun redeemPairingCode(code: String): String // connectionId
     suspend fun sendSignal(connectionId: String, preset: String, signalId: String): SendSignalResult
+    suspend fun updateMascot(connectionId: String, mascotId: String)
 }

@@ -14,6 +14,7 @@ class FakeWidgetlyFunctions : WidgetlyFunctions {
     var nextConnectionId: String = ""
     var shouldThrow: Boolean = false
     var delayMillis: Long = 0 // lets tests create a cancellation window mid-call
+    val updateMascotCalls = mutableListOf<Pair<String, String>>()
 
     override suspend fun registerFcmToken(token: String, platform: String) { registeredTokens += token to platform }
     override suspend fun createPairingCode(type: ConnectionType): String {
@@ -27,6 +28,10 @@ class FakeWidgetlyFunctions : WidgetlyFunctions {
         return nextConnectionId
     }
     override suspend fun sendSignal(connectionId: String, preset: String, signalId: String): SendSignalResult = error("not used")
+    override suspend fun updateMascot(connectionId: String, mascotId: String) {
+        if (shouldThrow) error("updateMascot failed")
+        updateMascotCalls += connectionId to mascotId
+    }
 }
 
 class FcmTokenSyncTest {
