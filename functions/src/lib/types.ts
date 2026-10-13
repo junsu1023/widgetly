@@ -19,6 +19,7 @@ export interface ConnectionDoc {
   streak: number;
   streakUpdatedDate: string; // "YYYY-MM-DD", Asia/Seoul 기준
   lastSignalByUid: Record<string, { presetType: string; sentAt: Timestamp }>;
+  mascotByUid?: Record<string, string>;
 }
 
 export interface SignalDoc {
