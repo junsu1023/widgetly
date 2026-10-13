@@ -50,7 +50,8 @@ struct CallableHttpClientTests {
     @Test func testGetConnectionResponseIsParsed() async throws {
         let body = #"""
         {"result":{"status":"active","streak":7,"memberUids":["me","you"],
-        "lastSignalByUid":{"you":{"presetType":"heart","sentAt":"2026-02-03T04:05:06.000Z"}}}}
+        "lastSignalByUid":{"you":{"presetType":"heart","sentAt":"2026-02-03T04:05:06.000Z"}},
+        "mascotByUid":{"me":"bear","you":"cat"}}}
         """#
         let client = CallableHttpClient(session: fakeSession(returning: body))
 
@@ -60,6 +61,19 @@ struct CallableHttpClientTests {
         #expect(result.streak == 7)
         #expect(result.memberUids == ["me", "you"])
         #expect(result.lastSignalByUid["you"]?.presetType == "heart")
+        #expect(result.mascotByUid?["you"] == "cat")
+    }
+
+    @Test func testGetConnectionResponseMissingMascotByUidDecodesToNil() async throws {
+        let body = #"""
+        {"result":{"status":"active","streak":7,"memberUids":["me","you"],
+        "lastSignalByUid":{}}}
+        """#
+        let client = CallableHttpClient(session: fakeSession(returning: body))
+
+        let result = try await client.getConnection(connectionId: "c1", authToken: "tok")
+
+        #expect(result.mascotByUid == nil)
     }
 
     @Test func testGetConnectionNotFoundThrowsServerError() async throws {

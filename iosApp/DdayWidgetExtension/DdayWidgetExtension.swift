@@ -105,9 +105,13 @@ struct DdayWidgetExtensionEntryView: View {
     var entry: Provider.Entry
 
     var body: some View {
+        // This device's own mascot pick (shared-core's IosMascotPreferenceStorage.kt
+        // key/suite) - a solo D-day widget has no partner, so unlike
+        // ConnectionWidget.swift there's only ever one mascot id to resolve.
+        let mascotAssetId = mascotAssetName(forCatalogId: loadCachedMascotId())
         if emptyStateLabels.contains(entry.label) {
             VStack(spacing: 4) {
-                Image("Quokka")
+                Image(mascotAssetId)
                     .resizable()
                     .frame(width: 48, height: 48)
                 Text(entry.label)
@@ -120,7 +124,7 @@ struct DdayWidgetExtensionEntryView: View {
                 // continuous resize the way Android's Glance widgets are, so
                 // there's no size signal to scale a count from (see
                 // ConnectionWidget.swift's cornerMascot(), same reasoning).
-                Image("Quokka")
+                Image(mascotAssetId)
                     .resizable()
                     .frame(width: 24, height: 24)
                     .opacity(0.3)

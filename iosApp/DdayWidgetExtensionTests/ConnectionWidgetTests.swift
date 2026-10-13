@@ -55,3 +55,35 @@ struct ConnectionWidgetTests {
         #expect(selectPartnerSignal(from: [:], ownUid: nil) == nil)
     }
 }
+
+/// Coverage for the mascot id -> asset name mapping and partner lookup added
+/// alongside the mascot-avatar-selection feature's iOS mirror.
+struct MascotMappingTests {
+    @Test func testEachCatalogIdMapsToItsCapitalizedAssetName() {
+        #expect(mascotAssetName(forCatalogId: "quokka") == "Quokka")
+        #expect(mascotAssetName(forCatalogId: "cat") == "Cat")
+        #expect(mascotAssetName(forCatalogId: "bear") == "Bear")
+        #expect(mascotAssetName(forCatalogId: "rabbit") == "Rabbit")
+        #expect(mascotAssetName(forCatalogId: "hamster") == "Hamster")
+    }
+
+    @Test func testUnrecognizedOrMissingIdFallsBackToQuokka() {
+        #expect(mascotAssetName(forCatalogId: "does-not-exist") == "Quokka")
+        #expect(mascotAssetName(forCatalogId: nil) == "Quokka")
+    }
+
+    @Test func testPartnerMascotIdPicksTheOtherUidsEntry() {
+        let mascotByUid = ["me": "bear", "you": "cat"]
+        #expect(selectPartnerMascotId(from: mascotByUid, ownUid: "me") == "cat")
+    }
+
+    @Test func testPartnerMascotIdFallsBackToQuokkaWhenPartnerHasNotPickedYet() {
+        let mascotByUid = ["me": "bear"]
+        #expect(selectPartnerMascotId(from: mascotByUid, ownUid: "me") == "quokka")
+    }
+
+    @Test func testPartnerMascotIdFallsBackToQuokkaWhenOwnUidOrMapIsUnknown() {
+        #expect(selectPartnerMascotId(from: ["you": "cat"], ownUid: nil) == "quokka")
+        #expect(selectPartnerMascotId(from: nil, ownUid: "me") == "quokka")
+    }
+}

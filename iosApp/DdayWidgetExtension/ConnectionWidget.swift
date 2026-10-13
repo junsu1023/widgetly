@@ -36,12 +36,52 @@ private let pushArrivedKeyPrefix = "connection_push_arrived_"
 /// The two `lastSignal*` fields are optional for two reasons: a brand-new
 /// connection has no signals, and snapshots cached by an older build don't carry
 /// the keys at all (Codable decodes a missing key into a `nil` optional, so old
-/// cached JSON still loads).
+/// cached JSON still loads). `mascotByUid` is optional for the same reason (an
+/// older cached snapshot predates this field) and is treated as `[:]` at every
+/// read site rather than force-unwrapped.
 struct ConnectionSnapshot: Codable {
     var status: String
     var streak: Int
     var lastSignalPreset: String?
     var lastSignalSenderUid: String?
+    var mascotByUid: [String: String]?
+}
+
+/// Maps a MascotCatalog id (shared-core's MascotCatalog.kt: lowercase
+/// "quokka"/"cat"/"bear"/"rabbit"/"hamster") to the capitalized asset catalog
+/// image name this target bundles (Assets.xcassets/{Quokka,Cat,Bear,Rabbit,
+/// Hamster}.imageset) — same fallback discipline as MascotCatalog.find:
+/// unrecognized or missing ids fall back to "Quokka". Not `private`: also used
+/// from DdayWidgetExtension.swift, same target.
+let mascotCatalogIdToAssetName: [String: String] = [
+    "quokka": "Quokka",
+    "cat": "Cat",
+    "bear": "Bear",
+    "rabbit": "Rabbit",
+    "hamster": "Hamster",
+]
+
+func mascotAssetName(forCatalogId id: String?) -> String {
+    mascotCatalogIdToAssetName[id ?? "quokka"] ?? "Quokka"
+}
+
+/// This device's own selected mascot id (shared-core's
+/// IosMascotPreferenceStorage.kt writes the same key/suite) — this extension
+/// has no SharedCore/Shared dependency on that storage class itself, it just
+/// has to agree on the same UserDefaults key name.
+func loadCachedMascotId() -> String {
+    UserDefaults(suiteName: appGroupSuiteName)?.string(forKey: "selected_mascot_id") ?? "quokka"
+}
+
+/// Picks the partner's mascot id out of the connection's `mascotByUid` map —
+/// the entry whose key isn't this device's own uid, mirroring
+/// `selectPartnerSignal`'s "pick by uid, not position" approach. Falls back to
+/// "quokka" (not omitted) when the partner hasn't picked a character yet
+/// (absent from the map), ownUid isn't cached yet, or the map itself is nil —
+/// same fallback ConnectionGlanceWidget.kt's partnerMascotId derivation uses.
+func selectPartnerMascotId(from mascotByUid: [String: String]?, ownUid: String?) -> String {
+    guard let ownUid, let mascotByUid else { return "quokka" }
+    return mascotByUid.first { $0.key != ownUid }?.value ?? "quokka"
 }
 
 /// Keyed per connectionId, same convention as the rate-limited/send-failed
@@ -112,7 +152,8 @@ private func fetchConnectionSnapshotFromServer(connectionId: String) async -> Co
         status: result.status,
         streak: result.streak,
         lastSignalPreset: partner?.value.presetType,
-        lastSignalSenderUid: partner?.key
+        lastSignalSenderUid: partner?.key,
+        mascotByUid: result.mascotByUid
     )
 }
 
@@ -375,7 +416,10 @@ struct ConnectionWidgetEntryView: View {
             if let connectionId = entry.connectionId {
                 if let connection = entry.connection, connection.status != "disconnected" {
                     ZStack(alignment: .bottomTrailing) {
-                        cornerMascot()
+                        cornerMascot(
+                            myMascotId: loadCachedMascotId(),
+                            partnerMascotId: selectPartnerMascotId(from: connection.mascotByUid, ownUid: entry.ownUid)
+                        )
                         VStack(spacing: 4) {
                             Text("스트릭 \(connection.streak)")
                                 .font(.custom("DoHyeon-Regular", size: 18))
@@ -417,11 +461,13 @@ struct ConnectionWidgetEntryView: View {
 
     /// The mascot above a message, for the widget's dead-end states only —
     /// never shown for "불러오는 중" (still waiting to learn anything, not
-    /// necessarily bad news) or once real connection data is on screen.
+    /// necessarily bad news) or once real connection data is on screen. This
+    /// device's own pick only — there's no partner to show anything about
+    /// once disconnected/unconfigured, same as Android's EmptyStateWithMascot.
     @ViewBuilder
     private func emptyState(_ message: String) -> some View {
         VStack(spacing: 4) {
-            Image("Quokka")
+            Image(mascotAssetName(forCatalogId: loadCachedMascotId()))
                 .resizable()
                 .frame(width: 48, height: 48)
             Text(message)
@@ -429,18 +475,25 @@ struct ConnectionWidgetEntryView: View {
         }
     }
 
-    /// A single faint quokka pinned to the bottom-trailing corner behind the
-    /// streak content — unlike Android's Glance widgets, SwiftUI's .opacity()
-    /// works at runtime, so no separate pre-faded asset is needed here. Fixed
-    /// at one instance regardless of widget family: WidgetKit's families
-    /// (small/medium/large) aren't a continuous resize the way Android's
-    /// Glance widgets are, so there's no size signal to scale a count from.
+    /// Both members' faint mascots side by side, pinned to the bottom-trailing
+    /// corner behind the streak content — unlike Android's Glance widgets,
+    /// SwiftUI's .opacity() works at runtime, so no separate pre-faded asset
+    /// is needed here. Always exactly 2 (my + partner), fixed regardless of
+    /// widget family: WidgetKit's families (small/medium/large) aren't a
+    /// continuous resize the way Android's Glance widgets are, so there's no
+    /// size signal to scale a count from (mirrors ConnectionMascotCornerDecoration.kt).
     @ViewBuilder
-    private func cornerMascot() -> some View {
-        Image("Quokka")
-            .resizable()
-            .frame(width: 24, height: 24)
-            .opacity(0.3)
+    private func cornerMascot(myMascotId: String, partnerMascotId: String) -> some View {
+        HStack(spacing: 2) {
+            Image(mascotAssetName(forCatalogId: myMascotId))
+                .resizable()
+                .frame(width: 24, height: 24)
+                .opacity(0.3)
+            Image(mascotAssetName(forCatalogId: partnerMascotId))
+                .resizable()
+                .frame(width: 24, height: 24)
+                .opacity(0.3)
+        }
     }
 
     /// 상대의 최신 신호. Only rendered when this device's own uid is known AND the

@@ -23,6 +23,11 @@ struct GetConnectionResult: Decodable {
     let streak: Int
     let memberUids: [String]
     let lastSignalByUid: [String: Signal]
+    /// Optional for the same reason as `ConnectionSnapshot.mascotByUid`
+    /// (ConnectionWidget.swift): the server always sends this key today
+    /// (getConnection.ts defaults it to `{}`), but decoding it as optional
+    /// costs nothing and survives an older cached test fixture that omits it.
+    let mascotByUid: [String: String]?
 }
 
 /// An `HttpsError` a callable reported (e.g. `failed-precondition`,
