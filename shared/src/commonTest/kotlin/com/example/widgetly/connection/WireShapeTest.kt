@@ -65,15 +65,49 @@ class WireShapeTest {
         val descriptor = ConnectionDoc.serializer().descriptor
         val names = (0 until descriptor.elementsCount).map { descriptor.getElementName(it) }
         assertEquals(
-            listOf("memberUids", "type", "status", "anniversaryDate", "streak", "lastSignalByUid"),
+            listOf("memberUids", "type", "status", "anniversaryDate", "streak", "lastSignalByUid", "mascotByUid"),
             names,
         )
-        // Only lastSignalByUid may be absent from a real document (a brand-new connection
-        // has no signals); everything else is written at creation time.
+        // lastSignalByUid/mascotByUid may be absent from a real document (a brand-new
+        // connection has no signals, and mascotByUid predates older connections);
+        // everything else is written at creation time.
         assertEquals(
-            listOf("lastSignalByUid"),
+            listOf("lastSignalByUid", "mascotByUid"),
             names.filterIndexed { index, _ -> descriptor.isElementOptional(index) },
         )
+    }
+
+    @Test
+    fun `ConnectionDoc decodes mascotByUid when present`() {
+        val doc = json.decodeFromString<ConnectionDoc>(
+            """
+            {
+              "memberUids": ["uidA", "uidB"],
+              "type": "couple",
+              "status": "active",
+              "anniversaryDate": "2025-01-01",
+              "streak": 7,
+              "mascotByUid": {"uidA": "bear", "uidB": "cat"}
+            }
+            """.trimIndent(),
+        )
+        assertEquals(mapOf("uidA" to "bear", "uidB" to "cat"), doc.mascotByUid)
+    }
+
+    @Test
+    fun `ConnectionDoc without mascotByUid at all decodes to an empty map`() {
+        val doc = json.decodeFromString<ConnectionDoc>(
+            """
+            {
+              "memberUids": ["uidA", "uidB"],
+              "type": "couple",
+              "status": "active",
+              "anniversaryDate": "2025-01-01",
+              "streak": 7
+            }
+            """.trimIndent(),
+        )
+        assertEquals(emptyMap(), doc.mascotByUid)
     }
 
     @Test

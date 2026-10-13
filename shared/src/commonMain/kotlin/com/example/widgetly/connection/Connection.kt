@@ -17,6 +17,7 @@ data class Connection(
     val anniversaryDate: LocalDate,
     val streak: Int,
     val lastSignalByUid: Map<String, SignalSummary>,
+    val mascotByUid: Map<String, String>,
 )
 
 /**
@@ -35,6 +36,7 @@ data class Connection(
  * the document, so unused backend fields cost nothing.
  *
  * `lastSignalByUid` is optional because a freshly created connection has no signals yet.
+ * `mascotByUid` is optional because connections created before this field existed have none.
  */
 @Serializable
 data class ConnectionDoc(
@@ -44,6 +46,7 @@ data class ConnectionDoc(
     val anniversaryDate: String, // "YYYY-MM-DD"
     val streak: Int,
     val lastSignalByUid: Map<String, SignalDoc> = emptyMap(),
+    val mascotByUid: Map<String, String> = emptyMap(),
 )
 
 /** Entry of [ConnectionDoc.lastSignalByUid]. [Timestamp] is GitLive's serializable Firestore timestamp. */
@@ -68,4 +71,5 @@ fun connectionFromDocument(id: String, doc: ConnectionDoc): Connection = Connect
             sentAt = Instant.fromEpochSeconds(signal.sentAt.seconds, signal.sentAt.nanoseconds),
         )
     },
+    mascotByUid = doc.mascotByUid,
 )

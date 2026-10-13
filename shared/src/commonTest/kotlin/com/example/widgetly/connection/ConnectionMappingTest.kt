@@ -14,6 +14,7 @@ class ConnectionMappingTest {
         lastSignalByUid: Map<String, SignalDoc> = mapOf(
             "uidA" to SignalDoc("heart", Timestamp(seconds = 1791108000, nanoseconds = 0)),
         ),
+        mascotByUid: Map<String, String> = mapOf("uidA" to "bear", "uidB" to "cat"),
     ) = ConnectionDoc(
         memberUids = listOf("uidA", "uidB"),
         type = type,
@@ -21,6 +22,7 @@ class ConnectionMappingTest {
         anniversaryDate = "2025-01-01",
         streak = streak,
         lastSignalByUid = lastSignalByUid,
+        mascotByUid = mascotByUid,
     )
 
     @Test
@@ -37,6 +39,7 @@ class ConnectionMappingTest {
             Instant.fromEpochSeconds(1791108000),
             connection.lastSignalByUid["uidA"]?.sentAt,
         )
+        assertEquals(mapOf("uidA" to "bear", "uidB" to "cat"), connection.mascotByUid)
     }
 
     @Test
@@ -66,6 +69,14 @@ class ConnectionMappingTest {
         assertEquals(
             emptyMap(),
             connectionFromDocument("conn-1", doc(lastSignalByUid = emptyMap())).lastSignalByUid,
+        )
+    }
+
+    @Test
+    fun `missing mascotByUid maps to an empty map instead of throwing`() {
+        assertEquals(
+            emptyMap(),
+            connectionFromDocument("conn-1", doc(mascotByUid = emptyMap())).mascotByUid,
         )
     }
 }
