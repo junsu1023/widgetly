@@ -115,6 +115,12 @@ class ConnectionGlanceWidget : GlanceAppWidget() {
                     WidgetlyApplication.connectionRepository.observeConnection(id2).first()
                 }
             }
+            // One-shot read, same as connectionState above and same as
+            // DdayGlanceWidget's mascotId (see its doc comment): mascotPreferenceStorage.read()
+            // is a suspend DataStore call with no reactive currentState() key.
+            val mascotId by produceState(initialValue = MascotCatalog.DEFAULT_MASCOT_ID) {
+                value = WidgetlyApplication.mascotPreferenceStorage.read()
+            }
             ConnectionWidgetContent(
                 connectionId,
                 connectionState,
@@ -122,6 +128,7 @@ class ConnectionGlanceWidget : GlanceAppWidget() {
                 sendFailedAt,
                 themeId,
                 WidgetlyApplication.currentUid,
+                mascotId,
             )
         }
     }
@@ -144,6 +151,7 @@ internal fun ConnectionWidgetContent(
     sendFailedAt: Long?,
     themeId: String?,
     myUid: String? = null,
+    myMascotId: String = MascotCatalog.DEFAULT_MASCOT_ID,
 ) {
     val theme = ThemeCatalog.find(themeId ?: ThemeCatalog.DEFAULT_THEME_ID)
     val backgroundColor = Color(theme.backgroundColorArgb)
@@ -165,17 +173,13 @@ internal fun ConnectionWidgetContent(
         contentAlignment = Alignment.Center,
     ) {
         when {
-            // MascotCatalog.DEFAULT_MASCOT_ID is a placeholder here: Task 12 wires
-            // this up to WidgetlyApplication.mascotPreferenceStorage.read() /
-            // ConnectionMascotCornerDecoration, same way DdayGlanceWidget already
-            // does for its own EmptyStateWithMascot call sites.
-            connectionId == null -> EmptyStateWithMascot(MascotCatalog.DEFAULT_MASCOT_ID, "설정 필요", textStyle)
+            connectionId == null -> EmptyStateWithMascot(myMascotId, "설정 필요", textStyle)
             connectionState === ConnectionLoading -> {}
-            connectionState == null -> EmptyStateWithMascot(MascotCatalog.DEFAULT_MASCOT_ID, "연결 끊김", textStyle)
+            connectionState == null -> EmptyStateWithMascot(myMascotId, "연결 끊김", textStyle)
             else -> {
                 val connection = connectionState as Connection
                 if (connection.status == "disconnected") {
-                    EmptyStateWithMascot(MascotCatalog.DEFAULT_MASCOT_ID, "연결 끊김", textStyle)
+                    EmptyStateWithMascot(myMascotId, "연결 끊김", textStyle)
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -225,7 +229,15 @@ internal fun ConnectionWidgetContent(
                             }
                         }
                     }
-                    MascotCornerDecoration(MascotCatalog.DEFAULT_MASCOT_ID)
+                    // Partner's pick comes from the connection doc (Connection.mascotByUid),
+                    // keyed by their uid - not this device's own mascotPreferenceStorage.
+                    // Falls back to quokka when the partner hasn't picked a character yet
+                    // (their uid absent from the map) rather than rendering a blank icon.
+                    val partnerMascotId = myUid
+                        ?.let { uid -> connection.memberUids.firstOrNull { it != uid } }
+                        ?.let { connection.mascotByUid[it] }
+                        ?: MascotCatalog.DEFAULT_MASCOT_ID
+                    ConnectionMascotCornerDecoration(myMascotId, partnerMascotId)
                 }
             }
         }

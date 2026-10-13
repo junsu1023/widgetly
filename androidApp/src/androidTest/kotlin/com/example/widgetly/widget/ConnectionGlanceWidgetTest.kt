@@ -18,7 +18,7 @@ private val sampleConnection = Connection(
     anniversaryDate = LocalDate(2026, 1, 1),
     streak = 5,
     lastSignalByUid = emptyMap(),
-    mascotByUid = emptyMap(),
+    mascotByUid = mapOf("uidB" to "bear"),
 )
 
 /**
@@ -38,9 +38,32 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = null,
                 sendFailedAt = null,
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "cat",
             )
         }
         onNode(hasText("연속 5일")).assertExists()
+        onAllNodes(hasContentDescriptionEqualTo("cat_corner")).assertCountEquals(1)
+        onAllNodes(hasContentDescriptionEqualTo("bear_corner")).assertCountEquals(1)
+    }
+
+    @Test
+    fun fallsBackToQuokkaForThePartnerWhenPartnerHasNotPickedAMascotYet() = runGlanceAppWidgetUnitTest {
+        setAppWidgetSize(MASCOT_SIZE_SMALL)
+        provideComposable {
+            ConnectionWidgetContent(
+                connectionId = sampleConnection.id,
+                // uidB (the partner, relative to myUid = "uidA") is absent from
+                // mascotByUid - mirrors a partner who hasn't picked a character yet.
+                connectionState = sampleConnection.copy(mascotByUid = emptyMap()),
+                rateLimitedAt = null,
+                sendFailedAt = null,
+                themeId = null,
+                myUid = "uidA",
+                myMascotId = "cat",
+            )
+        }
+        onAllNodes(hasContentDescriptionEqualTo("cat_corner")).assertCountEquals(1)
         onAllNodes(hasContentDescriptionEqualTo("quokka_corner")).assertCountEquals(1)
     }
 

@@ -28,6 +28,13 @@ internal fun mascotCountForSize(size: DpSize): Int = when (size) {
     else -> 1
 }
 
+/** Icon dp size for [ConnectionMascotCornerDecoration] - count is fixed at 2, only size scales. */
+private fun mascotIconSizeForSize(size: DpSize) = when (size) {
+    MASCOT_SIZE_LARGE -> 24.dp
+    MASCOT_SIZE_MEDIUM -> 20.dp
+    else -> 16.dp
+}
+
 /**
  * Maps a MascotCatalog id to its non-faint drawable, falling back to quokka
  * for any unrecognized id (stale selection, bad data) - same fallback
@@ -75,6 +82,31 @@ internal fun MascotCornerDecoration(mascotId: String) {
                     modifier = GlanceModifier.size(20.dp),
                 )
             }
+        }
+    }
+}
+
+/**
+ * The connection widget's equivalent of [MascotCornerDecoration]: always exactly 2
+ * icons (one per connection member, never 1 or 3 - unlike the solo widget's
+ * count-scales-with-size behavior), with the widget's size bucket controlling each
+ * icon's dp size instead.
+ */
+@Composable
+internal fun ConnectionMascotCornerDecoration(myMascotId: String, partnerMascotId: String) {
+    val iconSize = mascotIconSizeForSize(LocalSize.current)
+    Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
+        Row {
+            Image(
+                provider = ImageProvider(mascotFaintDrawableRes(myMascotId)),
+                contentDescription = "${myMascotId}_corner",
+                modifier = GlanceModifier.size(iconSize),
+            )
+            Image(
+                provider = ImageProvider(mascotFaintDrawableRes(partnerMascotId)),
+                contentDescription = "${partnerMascotId}_corner",
+                modifier = GlanceModifier.size(iconSize),
+            )
         }
     }
 }
