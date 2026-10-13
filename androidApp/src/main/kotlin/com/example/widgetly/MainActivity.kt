@@ -13,6 +13,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.widgetly.connection.PairingViewModel
 import com.example.widgetly.dday.DdayViewModel
+import com.example.widgetly.theme.AndroidMascotPreferenceStorage
+import com.example.widgetly.theme.MascotPickerViewModel
 
 class MainActivity : ComponentActivity() {
     private val requestNotificationPermission =
@@ -41,7 +43,14 @@ class MainActivity : ComponentActivity() {
                     initializer { PairingViewModel(WidgetlyApplication.widgetlyFunctions) }
                 },
             )
-            AppRoot(ddayViewModel, pairingViewModel)
+            val mascotPickerViewModel: MascotPickerViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        MascotPickerViewModel(AndroidMascotPreferenceStorage(applicationContext), WidgetlyApplication.widgetlyFunctions)
+                    }
+                },
+            )
+            AppRoot(ddayViewModel, pairingViewModel, mascotPickerViewModel)
         }
     }
 }

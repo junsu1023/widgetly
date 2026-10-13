@@ -9,6 +9,8 @@ import com.example.widgetly.connection.PairingViewModel
 import com.example.widgetly.dday.DdayRepository
 import com.example.widgetly.dday.DdayViewModel
 import com.example.widgetly.dday.IosDdayStorage
+import com.example.widgetly.theme.IosMascotPreferenceStorage
+import com.example.widgetly.theme.MascotPickerViewModel
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.app
 import dev.gitlive.firebase.functions.functions
@@ -24,5 +26,12 @@ fun MainViewController() = ComposeUIViewController {
             initializer { PairingViewModel(FirebaseWidgetlyFunctions(Firebase.functions(Firebase.app))) }
         },
     )
-    AppRoot(ddayViewModel, pairingViewModel)
+    val mascotPickerViewModel: MascotPickerViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer {
+                MascotPickerViewModel(IosMascotPreferenceStorage(), FirebaseWidgetlyFunctions(Firebase.functions(Firebase.app)))
+            }
+        },
+    )
+    AppRoot(ddayViewModel, pairingViewModel, mascotPickerViewModel)
 }
