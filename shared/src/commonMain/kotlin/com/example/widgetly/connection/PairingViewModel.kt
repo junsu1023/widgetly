@@ -23,10 +23,24 @@ sealed interface PairingUiState {
  * failure - is already shown as persistent on-screen state (CodeCreated,
  * Connected, Error), not a one-off notification, so there's nothing a
  * transient effect would add.
+ *
+ * [connectionIdStorage] is what makes [PairingUiState.Connected] survive a
+ * restart: before it, the state was only ever set in-memory by a successful
+ * [redeem], so a paired user reopening the app looked unpaired to everything
+ * reading this state (the mascot picker's `updateMascot` call, notably).
  */
-class PairingViewModel(private val functions: WidgetlyFunctions) : ViewModel() {
+class PairingViewModel(
+    private val functions: WidgetlyFunctions,
+    private val connectionIdStorage: ConnectionIdStorage,
+) : ViewModel() {
     private val _state = MutableStateFlow<PairingUiState>(PairingUiState.Idle)
     val state: StateFlow<PairingUiState> = _state
+
+    init {
+        viewModelScope.launch {
+            connectionIdStorage.read()?.let { _state.value = PairingUiState.Connected(it) }
+        }
+    }
 
     fun onEvent(event: PairingEvent) {
         when (event) {
@@ -52,6 +66,7 @@ class PairingViewModel(private val functions: WidgetlyFunctions) : ViewModel() {
         viewModelScope.launch {
             try {
                 val connectionId = functions.redeemPairingCode(code)
+                connectionIdStorage.write(connectionId)
                 _state.value = PairingUiState.Connected(connectionId)
             } catch (e: CancellationException) {
                 throw e

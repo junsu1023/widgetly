@@ -32,6 +32,7 @@ import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.lifecycle.lifecycleScope
+import com.example.widgetly.WidgetlyApplication
 import com.example.widgetly.theme.Theme
 import com.example.widgetly.theme.ThemeCatalog
 import com.example.widgetly.theme.WidgetlyButtonShape
@@ -42,10 +43,11 @@ import kotlinx.coroutines.launch
  * Picks which connection this widget instance shows. Unlike the personal D-day
  * widget's config activity, there's no local "list my connections" source to pick
  * from yet - ConnectionRepository only supports observing a single known id
- * (Task 1), and pairing doesn't persist the connectionId anywhere client-side
- * (Task 3's PairingScreen just displays it as text). Building that listing is out
+ * (Task 1), and pairing never produced a list of connections (Task 3's
+ * PairingScreen just displays the one id as text). Building that listing is out
  * of scope for this leaf task, so the user pastes the connection id shown on the
- * pairing screen after connecting.
+ * pairing screen after connecting. What is confirmed here does get persisted
+ * (ConnectionIdStorage, see confirmSelection) as this device's active connection.
  */
 class ConnectionWidgetConfigurationActivity : ComponentActivity() {
     private var appWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
@@ -127,6 +129,12 @@ class ConnectionWidgetConfigurationActivity : ComponentActivity() {
     private fun confirmSelection(connectionId: String, theme: Theme) {
         val glanceId = GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId)
         lifecycleScope.launch {
+            // The only other place a connectionId becomes known client-side besides
+            // PairingViewModel.redeem() - and the only one the *inviting* device ever
+            // reaches, since nothing promotes it to Connected when the partner
+            // redeems. Persisting it here is what lets the app shell know this device
+            // is paired (and so share the picked mascot) on the next launch.
+            WidgetlyApplication.connectionIdStorage.write(connectionId)
             saveSelectedConnection(this@ConnectionWidgetConfigurationActivity, glanceId, connectionId)
             saveSelectedTheme(this@ConnectionWidgetConfigurationActivity, glanceId, theme.id)
             val resultValue = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
