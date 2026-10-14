@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.MenuBook
@@ -269,43 +270,59 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
                         shape = CardShape,
                         colors = CardDefaults.cardColors(containerColor = CardBackground),
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(entry.icon.badgeColorArgb)),
-                                contentAlignment = Alignment.Center,
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(entry.icon.badgeColorArgb)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        entry.icon.toImageVector(),
+                                        contentDescription = null,
+                                        tint = Color(entry.icon.glyphColorArgb),
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = entry.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = TextStrong,
+                                    )
+                                    Text(
+                                        text = result.label,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextStrong,
+                                    )
+                                    Text(
+                                        text = "${entry.targetDate.year}.${entry.targetDate.monthNumber}.${entry.targetDate.dayOfMonth}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextCaption,
+                                    )
+                                }
+                                mascotIcon(Modifier.size(54.dp))
+                            }
+                            // Small, subtle delete affordance tucked in the corner so it doesn't
+                            // compete with the Figma card layout. Deletes immediately on tap,
+                            // matching the old row's "삭제" IconButton which also had no confirmation step.
+                            IconButton(
+                                onClick = { viewModel.onEvent(DdayEvent.Remove(entry.id)) },
+                                modifier = Modifier.align(Alignment.TopEnd).size(28.dp),
                             ) {
                                 Icon(
-                                    entry.icon.toImageVector(),
-                                    contentDescription = null,
-                                    tint = Color(entry.icon.glyphColorArgb),
+                                    Icons.Filled.Close,
+                                    contentDescription = "삭제",
+                                    tint = TextInactive,
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = entry.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = TextStrong,
-                                )
-                                Text(
-                                    text = result.label,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextStrong,
-                                )
-                                Text(
-                                    text = "${entry.targetDate.year}.${entry.targetDate.monthNumber}.${entry.targetDate.dayOfMonth}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextCaption,
-                                )
-                            }
-                            mascotIcon(Modifier.size(54.dp))
                         }
                     }
                 }
