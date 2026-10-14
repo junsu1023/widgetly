@@ -28,7 +28,7 @@ struct DdayWidgetExtensionTests {
 
     @Test func knownEntryMapsToItsCalculatedLabel() {
         let today = Kotlinx_datetimeLocalDate(year: 2026, month: 10, day: 5)
-        let entry = DdayEntry(id: "1", title: "t", targetDate: today, countMode: .startAtZero, repeat: .none)
+        let entry = DdayEntry(id: "1", title: "t", targetDate: today, countMode: .startAtZero, repeat: .none, category: .other, icon: .heart)
         let label = DdayCalculatorKt.ddayDisplayLabel(entry: entry, today: today)
         #expect(label == "D-DAY")
     }
