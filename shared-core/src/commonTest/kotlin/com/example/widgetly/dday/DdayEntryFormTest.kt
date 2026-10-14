@@ -78,4 +78,21 @@ class DdayEntryFormTest {
         )
         assertNull(entry)
     }
+
+    @Test
+    fun `category and icon pass through when provided`() {
+        val entry = buildDdayEntry(
+            id = "1",
+            title = "여행",
+            year = 2026,
+            month = 4,
+            day = 18,
+            countStartAtOne = false,
+            repeatYearly = false,
+            category = DdayCategory.FRIEND,
+            icon = DdayIcon.PLANE,
+        )
+        assertEquals(DdayCategory.FRIEND, entry?.category)
+        assertEquals(DdayIcon.PLANE, entry?.icon)
+    }
 }

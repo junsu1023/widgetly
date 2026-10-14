@@ -10,6 +10,8 @@ fun buildDdayEntry(
     day: Int?,
     countStartAtOne: Boolean,
     repeatYearly: Boolean,
+    category: DdayCategory = DdayCategory.OTHER,
+    icon: DdayIcon = DdayIcon.HEART,
 ): DdayEntry? {
     if (title.isBlank()) return null
     val y = year ?: return null
@@ -26,5 +28,7 @@ fun buildDdayEntry(
         targetDate = targetDate,
         countMode = if (countStartAtOne) CountMode.START_AT_ONE else CountMode.START_AT_ZERO,
         repeat = if (repeatYearly) RepeatMode.YEARLY else RepeatMode.NONE,
+        category = category,
+        icon = icon,
     )
 }
