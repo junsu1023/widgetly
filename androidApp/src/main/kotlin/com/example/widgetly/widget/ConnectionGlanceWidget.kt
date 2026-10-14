@@ -117,8 +117,9 @@ class ConnectionGlanceWidget : GlanceAppWidget() {
             }
             // One-shot read, same as connectionState above and same as
             // DdayGlanceWidget's mascotId (see its doc comment): mascotPreferenceStorage.read()
-            // is a suspend DataStore call with no reactive currentState() key.
-            val mascotId by produceState(initialValue = MascotCatalog.DEFAULT_MASCOT_ID) {
+            // is a suspend DataStore call with no reactive currentState() key, so the
+            // refresh token has to key it or a new pick never reaches this widget.
+            val mascotId by produceState(initialValue = MascotCatalog.DEFAULT_MASCOT_ID, key1 = refreshToken) {
                 value = WidgetlyApplication.mascotPreferenceStorage.read()
             }
             ConnectionWidgetContent(
@@ -150,8 +151,8 @@ internal fun ConnectionWidgetContent(
     rateLimitedAt: Long?,
     sendFailedAt: Long?,
     themeId: String?,
-    myUid: String? = null,
-    myMascotId: String = MascotCatalog.DEFAULT_MASCOT_ID,
+    myUid: String?,
+    myMascotId: String,
 ) {
     val theme = ThemeCatalog.find(themeId ?: ThemeCatalog.DEFAULT_THEME_ID)
     val backgroundColor = Color(theme.backgroundColorArgb)

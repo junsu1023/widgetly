@@ -73,8 +73,11 @@ class DdayGlanceWidget : GlanceAppWidget() {
             val themeId = currentState(THEME_ID_KEY)
             // One-shot read, same as entryState above: mascotPreferenceStorage.read()
             // is a suspend DataStore call, and there's no reactive currentState() key
-            // for it the way DDAY_ENTRY_ID_KEY works for the entry.
-            val mascotId by produceState(initialValue = MascotCatalog.DEFAULT_MASCOT_ID) {
+            // for it the way DDAY_ENTRY_ID_KEY works for the entry. key1 is what makes
+            // a new pick actually land: without a key the producer runs once per
+            // composition and keeps the first value forever, so the refresh token
+            // WidgetlyApplication bumps on every mascot write has to key it too.
+            val mascotId by produceState(initialValue = MascotCatalog.DEFAULT_MASCOT_ID, key1 = refreshToken) {
                 value = WidgetlyApplication.mascotPreferenceStorage.read()
             }
             DdayWidgetContent(entryId, entryState, themeId, mascotId)

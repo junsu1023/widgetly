@@ -77,6 +77,8 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = null,
                 sendFailedAt = null,
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("연결 끊김")).assertExists()
@@ -92,6 +94,8 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = null,
                 sendFailedAt = null,
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("연결 끊김")).assertExists()
@@ -106,6 +110,8 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = null,
                 sendFailedAt = null,
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("설정 필요")).assertExists()
@@ -120,6 +126,8 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = System.currentTimeMillis(),
                 sendFailedAt = null,
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("잠시 후 다시 보내주세요")).assertExists()
@@ -140,6 +148,7 @@ class ConnectionGlanceWidgetTest {
                 sendFailedAt = null,
                 themeId = null,
                 myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("상대 신호: heart")).assertExists()
@@ -157,6 +166,7 @@ class ConnectionGlanceWidgetTest {
                 sendFailedAt = null,
                 themeId = null,
                 myUid = null,
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("상대 신호: heart")).assertDoesNotExist()
@@ -171,6 +181,8 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = System.currentTimeMillis(),
                 sendFailedAt = null,
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("신호 보내기")).assertDoesNotExist()
@@ -185,6 +197,8 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = System.currentTimeMillis() - SIGNAL_FEEDBACK_WINDOW_MS - 1,
                 sendFailedAt = null,
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("잠시 후 다시 보내주세요")).assertDoesNotExist()
@@ -200,6 +214,8 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = null,
                 sendFailedAt = System.currentTimeMillis(),
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("전송 실패, 다시 시도해주세요")).assertExists()
@@ -215,6 +231,8 @@ class ConnectionGlanceWidgetTest {
                 rateLimitedAt = null,
                 sendFailedAt = System.currentTimeMillis() - SIGNAL_FEEDBACK_WINDOW_MS - 1,
                 themeId = null,
+                myUid = "uidA",
+                myMascotId = "quokka",
             )
         }
         onNode(hasText("전송 실패, 다시 시도해주세요")).assertDoesNotExist()

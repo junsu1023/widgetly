@@ -13,7 +13,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.widgetly.connection.PairingViewModel
 import com.example.widgetly.dday.DdayViewModel
-import com.example.widgetly.theme.AndroidMascotPreferenceStorage
 import com.example.widgetly.theme.MascotPickerViewModel
 
 class MainActivity : ComponentActivity() {
@@ -40,13 +39,24 @@ class MainActivity : ComponentActivity() {
             )
             val pairingViewModel: PairingViewModel = viewModel(
                 factory = viewModelFactory {
-                    initializer { PairingViewModel(WidgetlyApplication.widgetlyFunctions) }
+                    initializer {
+                        PairingViewModel(
+                            WidgetlyApplication.widgetlyFunctions,
+                            WidgetlyApplication.connectionIdStorage,
+                        )
+                    }
                 },
             )
             val mascotPickerViewModel: MascotPickerViewModel = viewModel(
                 factory = viewModelFactory {
                     initializer {
-                        MascotPickerViewModel(AndroidMascotPreferenceStorage(applicationContext), WidgetlyApplication.widgetlyFunctions)
+                        // WidgetlyApplication's accessor, not a raw
+                        // AndroidMascotPreferenceStorage: that one wraps the write
+                        // with the Glance widget refresh (see its doc comment).
+                        MascotPickerViewModel(
+                            WidgetlyApplication.mascotPreferenceStorage,
+                            WidgetlyApplication.widgetlyFunctions,
+                        )
                     }
                 },
             )
