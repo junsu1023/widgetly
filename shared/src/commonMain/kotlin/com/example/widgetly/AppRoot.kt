@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Home
@@ -21,13 +22,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import com.example.widgetly.connection.PairingScreen
 import com.example.widgetly.connection.PairingUiState
 import com.example.widgetly.connection.PairingViewModel
 import com.example.widgetly.dday.DdayListScreen
 import com.example.widgetly.dday.DdayViewModel
+import com.example.widgetly.theme.MascotBackground
 import com.example.widgetly.theme.MascotPickerScreen
 import com.example.widgetly.theme.MascotPickerViewModel
 import com.example.widgetly.theme.WidgetlyTheme
@@ -82,6 +86,9 @@ fun AppRoot(
                     AppScreen.WIDGET_GALLERY -> WidgetGalleryScreen()
                     AppScreen.THEME -> MascotPickerScreen(mascotPickerViewModel, currentConnectionId)
                     AppScreen.MORE -> PairingScreen(pairingViewModel)
+                }
+                if (currentScreen != AppScreen.HOME) {
+                    MascotBackground(myMascotId, Modifier.align(Alignment.BottomEnd).padding(16.dp))
                 }
             }
             NavigationBar {
