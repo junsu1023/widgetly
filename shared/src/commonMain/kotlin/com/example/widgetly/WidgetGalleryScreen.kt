@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 
 /**
  * Placeholder destination for the "위젯갤러리" tab - out of MVP scope per
- * docs/superpowers/specs/2026-10-04-widgetly-mvp-design.md. Just a reachable
+ * docs/superpowers/specs/2026-10-14-home-screen-redesign.md. Just a reachable
  * stub so the 4-tab bottom nav has somewhere to go.
  */
 @Composable

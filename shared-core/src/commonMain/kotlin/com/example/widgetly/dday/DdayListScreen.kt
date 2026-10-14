@@ -3,6 +3,7 @@ package com.example.widgetly.dday
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,12 +25,14 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -56,11 +59,44 @@ import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-private val TextStrong = Color(0xFF342923)
-private val TextInactive = Color(0xFF887F7B)
-private val TextCaption = Color(0xFF8D8581)
-private val PageBackground = Color(0xFFFFFEFC)
-private val CardBackground = Color(0xFFFFFFFF)
+/**
+ * This screen's own light/dark color set. The light values are the Figma
+ * pixel-samples from the home-screen redesign spec, which deliberately
+ * diverge from `shared`'s `AppColorTokens` (warmer, nearly white) and have no
+ * dark variant in the design file - the dark values below are derived the same
+ * way `AppColorTokens.light`/`dark` relate to each other (warm near-white
+ * backgrounds become warm near-black, dark text becomes cream, hue preserved).
+ *
+ * Kept local rather than pulled from `AppColorTokens` because this file lives
+ * in `shared-core`, which has zero dependency on `shared` by design.
+ * Everything this screen draws must resolve its color from here, never from
+ * the ambient MaterialTheme - the ambient scheme flips with system dark mode
+ * and would land light text on this screen's near-white background.
+ */
+private class ScreenColors(
+    val pageBackground: Color,
+    val cardBackground: Color,
+    val textStrong: Color,
+    val textInactive: Color,
+    val textCaption: Color,
+)
+
+private val LightScreenColors = ScreenColors(
+    pageBackground = Color(0xFFFFFEFC),
+    cardBackground = Color(0xFFFFFFFF),
+    textStrong = Color(0xFF342923),
+    textInactive = Color(0xFF887F7B),
+    textCaption = Color(0xFF8D8581),
+)
+
+private val DarkScreenColors = ScreenColors(
+    pageBackground = Color(0xFF2B2420),
+    cardBackground = Color(0xFF3A2E22),
+    textStrong = Color(0xFFFFE6C7),
+    textInactive = Color(0xFFB8A99C),
+    textCaption = Color(0xFFB0A69C),
+)
+
 private val CardShape = RoundedCornerShape(20.dp)
 
 private fun DdayIcon.toImageVector(): ImageVector = when (this) {
@@ -90,10 +126,17 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
     val uiState by viewModel.state.collectAsState()
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
 
+    val colors = if (isSystemInDarkTheme()) DarkScreenColors else LightScreenColors
+
     // Tab filter for which entries to VIEW - independent of the creation form's
     // selectedNewEntryCategory below. Picking a tab must never change what
     // category the next created entry gets.
     var selectedCategory by remember { mutableStateOf<DdayCategory?>(null) }
+
+    // The creation form is collapsed by default - expanded it takes roughly
+    // 500dp, which on a typical phone would leave almost nothing for the card
+    // list this screen exists to show. The top-bar + toggles it.
+    var showForm by remember { mutableStateOf(false) }
 
     var newTitle by remember { mutableStateOf("") }
     var newYear by remember { mutableStateOf(today.year.toString()) }
@@ -136,8 +179,18 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
         }
     }
 
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = colors.textStrong,
+        unfocusedTextColor = colors.textStrong,
+        focusedLabelColor = colors.textStrong,
+        unfocusedLabelColor = colors.textInactive,
+        cursorColor = colors.textStrong,
+        focusedBorderColor = colors.textStrong,
+        unfocusedBorderColor = colors.textInactive,
+    )
+
     Scaffold(
-        containerColor = PageBackground,
+        containerColor = colors.pageBackground,
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
@@ -151,16 +204,20 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
                 Text(
                     text = "D-day!",
                     style = MaterialTheme.typography.titleLarge,
-                    color = TextStrong,
+                    color = colors.textStrong,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = { addEntryFromForm() }) {
-                    Icon(Icons.Filled.Add, contentDescription = "추가", tint = TextStrong)
+                IconButton(onClick = { showForm = !showForm }) {
+                    Icon(
+                        Icons.Filled.Add,
+                        contentDescription = if (showForm) "디데이 추가 폼 닫기" else "디데이 추가",
+                        tint = colors.textStrong,
+                    )
                 }
                 // TODO: wire to a real settings/더보기 destination once that screen is designed
-                // (out of scope per docs/superpowers/specs/2026-10-04-widgetly-mvp-design.md).
+                // (out of scope per docs/superpowers/specs/2026-10-14-home-screen-redesign.md).
                 IconButton(onClick = {}) {
-                    Icon(Icons.Filled.Settings, contentDescription = "설정", tint = TextStrong)
+                    Icon(Icons.Filled.Settings, contentDescription = "설정", tint = colors.textStrong)
                 }
             }
 
@@ -174,86 +231,104 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
                         text = label,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isActive) TextStrong else TextInactive,
+                        color = if (isActive) colors.textStrong else colors.textInactive,
                         modifier = Modifier.clickable { selectedCategory = category },
                     )
                 }
             }
 
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                OutlinedTextField(
-                    value = newTitle,
-                    onValueChange = { newTitle = it },
-                    label = { Text("제목") },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                OutlinedTextField(
-                    value = newYear,
-                    onValueChange = { newYear = it },
-                    label = { Text("년") },
-                    modifier = Modifier.weight(1f),
-                )
-                OutlinedTextField(
-                    value = newMonth,
-                    onValueChange = { newMonth = it },
-                    label = { Text("월") },
-                    modifier = Modifier.weight(1f),
-                )
-                OutlinedTextField(
-                    value = newDay,
-                    onValueChange = { newDay = it },
-                    label = { Text("일") },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                Text("기준일을 1일로 세기")
-                Switch(checked = countStartAtOne, onCheckedChange = { countStartAtOne = it })
-            }
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                Text("매년 반복")
-                Switch(checked = repeatYearly, onCheckedChange = { repeatYearly = it })
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DdayIcon.entries.forEach { icon ->
-                    val isSelected = icon == selectedIcon
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(Color(icon.badgeColorArgb))
-                            .let {
-                                if (isSelected) it.border(2.dp, TextStrong, CircleShape) else it
-                            }
-                            .clickable { selectedIcon = icon },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(icon.toImageVector(), contentDescription = null, tint = Color(icon.glyphColorArgb))
+            if (showForm) {
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    OutlinedTextField(
+                        value = newTitle,
+                        onValueChange = { newTitle = it },
+                        label = { Text("제목") },
+                        colors = fieldColors,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    OutlinedTextField(
+                        value = newYear,
+                        onValueChange = { newYear = it },
+                        label = { Text("년") },
+                        colors = fieldColors,
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = newMonth,
+                        onValueChange = { newMonth = it },
+                        label = { Text("월") },
+                        colors = fieldColors,
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = newDay,
+                        onValueChange = { newDay = it },
+                        label = { Text("일") },
+                        colors = fieldColors,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("기준일을 1일로 세기", color = colors.textStrong)
+                    Switch(checked = countStartAtOne, onCheckedChange = { countStartAtOne = it })
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("매년 반복", color = colors.textStrong)
+                    Switch(checked = repeatYearly, onCheckedChange = { repeatYearly = it })
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    DdayIcon.entries.forEach { icon ->
+                        val isSelected = icon == selectedIcon
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Color(icon.badgeColorArgb))
+                                .let {
+                                    if (isSelected) it.border(2.dp, colors.textStrong, CircleShape) else it
+                                }
+                                .clickable { selectedIcon = icon },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(icon.toImageVector(), contentDescription = null, tint = Color(icon.glyphColorArgb))
+                        }
                     }
                 }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                DdayCategory.entries.forEach { category ->
-                    val isSelected = category == selectedNewEntryCategory
-                    Text(
-                        text = category.label(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) TextStrong else TextInactive,
-                        modifier = Modifier
-                            .clip(WidgetlyButtonShape)
-                            .let { if (isSelected) it.background(Color(0xFFFFE2E7)) else it }
-                            .clickable { selectedNewEntryCategory = category }
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    DdayCategory.entries.forEach { category ->
+                        val isSelected = category == selectedNewEntryCategory
+                        Text(
+                            text = category.label(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) colors.textStrong else colors.textInactive,
+                            modifier = Modifier
+                                .clip(WidgetlyButtonShape)
+                                .let { if (isSelected) it.background(Color(0xFFFFE2E7)) else it }
+                                .clickable { selectedNewEntryCategory = category }
+                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                        )
+                    }
+                }
+                // Submit sits with the fields it submits, not up in the top bar.
+                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    Button(onClick = { addEntryFromForm() }) {
+                        Text("추가")
+                    }
                 }
             }
 
@@ -268,7 +343,7 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = CardShape,
-                        colors = CardDefaults.cardColors(containerColor = CardBackground),
+                        colors = CardDefaults.cardColors(containerColor = colors.cardBackground),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -291,34 +366,34 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = entry.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = TextStrong,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = colors.textStrong,
                                 )
                                 Text(
                                     text = result.label,
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = TextStrong,
+                                    color = colors.textStrong,
                                 )
                                 Text(
                                     text = "${entry.targetDate.year}.${entry.targetDate.monthNumber}.${entry.targetDate.dayOfMonth}",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TextCaption,
+                                    color = colors.textCaption,
                                 )
                             }
                             mascotIcon(Modifier.size(54.dp))
                             // Small, subtle delete affordance at the end of the row so Row's
                             // left-to-right layout rules out any overlap with mascotIcon.
-                            // Deletes immediately on tap, matching the old row's "삭제" IconButton
-                            // which also had no confirmation step.
-                            IconButton(
-                                onClick = { viewModel.onEvent(DdayEvent.Remove(entry.id)) },
-                                modifier = Modifier.size(24.dp),
-                            ) {
+                            // The glyph stays small (16dp) but the IconButton keeps its
+                            // default ~48dp touch target - this is the only way to delete
+                            // an entry in the app, so it must not be under the minimum tap
+                            // size. Deletes immediately on tap, matching the old row's
+                            // "삭제" IconButton which also had no confirmation step.
+                            IconButton(onClick = { viewModel.onEvent(DdayEvent.Remove(entry.id)) }) {
                                 Icon(
                                     Icons.Filled.Close,
                                     contentDescription = "삭제",
-                                    tint = TextInactive,
+                                    tint = colors.textInactive,
                                     modifier = Modifier.size(16.dp),
                                 )
                             }

@@ -91,7 +91,10 @@ fun AppRoot(
                     MascotBackground(myMascotId, Modifier.align(Alignment.BottomEnd).padding(16.dp))
                 }
             }
-            NavigationBar {
+            // Explicit surface - Material3's default NavigationBar container is
+            // surfaceContainer, a slot WidgetlyTheme never overrides, so it
+            // would render as an off-theme lavender-gray under the warm palette.
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 bottomNavItems.forEach { item ->
                     val isActive = currentScreen == item.screen
                     NavigationBarItem(
