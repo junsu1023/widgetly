@@ -79,6 +79,7 @@ private class ScreenColors(
     val textStrong: Color,
     val textInactive: Color,
     val textCaption: Color,
+    val chipSelectedBackground: Color,
 )
 
 private val LightScreenColors = ScreenColors(
@@ -87,6 +88,7 @@ private val LightScreenColors = ScreenColors(
     textStrong = Color(0xFF342923),
     textInactive = Color(0xFF887F7B),
     textCaption = Color(0xFF8D8581),
+    chipSelectedBackground = Color(0xFFFFE2E7),
 )
 
 private val DarkScreenColors = ScreenColors(
@@ -95,6 +97,10 @@ private val DarkScreenColors = ScreenColors(
     textStrong = Color(0xFFFFE6C7),
     textInactive = Color(0xFFB8A99C),
     textCaption = Color(0xFFB0A69C),
+    // Lighter than cardBackground (not a dark-ified pink) so textStrong's cream
+    // stays readable on top - a dark tint of the light chip's pink would trend
+    // toward the same low-contrast-with-cream-text problem this exists to fix.
+    chipSelectedBackground = Color(0xFF4A3B2E),
 )
 
 private val CardShape = RoundedCornerShape(20.dp)
@@ -318,7 +324,7 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
                             color = if (isSelected) colors.textStrong else colors.textInactive,
                             modifier = Modifier
                                 .clip(WidgetlyButtonShape)
-                                .let { if (isSelected) it.background(Color(0xFFFFE2E7)) else it }
+                                .let { if (isSelected) it.background(colors.chipSelectedBackground) else it }
                                 .clickable { selectedNewEntryCategory = category }
                                 .padding(horizontal = 12.dp, vertical = 4.dp),
                         )
