@@ -76,6 +76,33 @@ describe("updateMascotLogic", () => {
     ).rejects.toThrow(HttpsError);
   });
 
+  it("rejects a connectionId containing a slash with invalid-argument", async () => {
+    // Same guard getConnection.ts has: "a/signals/x" would address a signal
+    // document through path interpolation, not a connection.
+    try {
+      await updateMascotLogic(uidA, { connectionId: "conn-1/signals/x", mascotId: "cat" }, firestore);
+      expect.fail("Should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpsError);
+      expect((error as HttpsError).code).toBe("invalid-argument");
+    }
+  });
+
+  it("is a no-op when the stored mascotId is already the requested one", async () => {
+    await seedConnection(firestore, connectionId, [uidA, uidB]);
+    await updateMascotLogic(uidA, { connectionId, mascotId: "cat" }, firestore);
+    const afterFirst = await firestore.doc(`connections/${connectionId}`).get();
+
+    await updateMascotLogic(uidA, { connectionId, mascotId: "cat" }, firestore);
+
+    const afterSecond = await firestore.doc(`connections/${connectionId}`).get();
+    expect(afterSecond.get("mascotByUid")[uidA]).toBe("cat");
+    // Firestore itself ignores a write that changes nothing, so updateTime staying
+    // put doesn't prove the short-circuit - it just pins the observable contract:
+    // a repeat pick is harmless and leaves the stored value intact.
+    expect(afterSecond.updateTime?.isEqual(afterFirst.updateTime!)).toBe(true);
+  });
+
   it("does not touch the partner's existing mascotByUid entry", async () => {
     await seedConnection(firestore, connectionId, [uidA, uidB]);
     await updateMascotLogic(uidB, { connectionId, mascotId: "bear" }, firestore);

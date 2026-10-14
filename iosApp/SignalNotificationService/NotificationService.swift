@@ -31,6 +31,7 @@ private struct ConnectionSnapshot: Codable {
     var streak: Int
     var lastSignalPreset: String?
     var lastSignalSenderUid: String?
+    var mascotByUid: [String: String]?
 }
 
 /// iOS 17~25 "즉시 반영" path (docs/widget-development.md): when a push about
