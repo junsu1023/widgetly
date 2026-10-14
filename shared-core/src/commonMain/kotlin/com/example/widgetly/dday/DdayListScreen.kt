@@ -270,51 +270,50 @@ fun DdayListScreen(viewModel: DdayViewModel, mascotIcon: @Composable (Modifier) 
                         shape = CardShape,
                         colors = CardDefaults.cardColors(containerColor = CardBackground),
                     ) {
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(entry.icon.badgeColorArgb)),
+                                contentAlignment = Alignment.Center,
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(entry.icon.badgeColorArgb)),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        entry.icon.toImageVector(),
-                                        contentDescription = null,
-                                        tint = Color(entry.icon.glyphColorArgb),
-                                    )
-                                }
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = entry.title,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = TextStrong,
-                                    )
-                                    Text(
-                                        text = result.label,
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextStrong,
-                                    )
-                                    Text(
-                                        text = "${entry.targetDate.year}.${entry.targetDate.monthNumber}.${entry.targetDate.dayOfMonth}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextCaption,
-                                    )
-                                }
-                                mascotIcon(Modifier.size(54.dp))
+                                Icon(
+                                    entry.icon.toImageVector(),
+                                    contentDescription = null,
+                                    tint = Color(entry.icon.glyphColorArgb),
+                                )
                             }
-                            // Small, subtle delete affordance tucked in the corner so it doesn't
-                            // compete with the Figma card layout. Deletes immediately on tap,
-                            // matching the old row's "삭제" IconButton which also had no confirmation step.
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = entry.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = TextStrong,
+                                )
+                                Text(
+                                    text = result.label,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextStrong,
+                                )
+                                Text(
+                                    text = "${entry.targetDate.year}.${entry.targetDate.monthNumber}.${entry.targetDate.dayOfMonth}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextCaption,
+                                )
+                            }
+                            mascotIcon(Modifier.size(54.dp))
+                            // Small, subtle delete affordance at the end of the row so Row's
+                            // left-to-right layout rules out any overlap with mascotIcon.
+                            // Deletes immediately on tap, matching the old row's "삭제" IconButton
+                            // which also had no confirmation step.
                             IconButton(
                                 onClick = { viewModel.onEvent(DdayEvent.Remove(entry.id)) },
-                                modifier = Modifier.align(Alignment.TopEnd).size(28.dp),
+                                modifier = Modifier.size(24.dp),
                             ) {
                                 Icon(
                                     Icons.Filled.Close,
